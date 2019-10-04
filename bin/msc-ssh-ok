@@ -1,0 +1,41 @@
+#!/bin/sh
+Verbose=1
+while getopts "qv" opt; do
+    case $opt in
+        q)
+            Verbose=`expr $Verbose - 1`
+            ;;
+        v)
+            Verbose=`expr $Verbose + 1`
+            ;;
+        *)
+            ;;
+    esac
+done
+shift $((OPTIND-1));
+host=$1
+
+SshOpts=
+if [ $Verbose -gt 1 ];then
+    SshOpts="-v"
+elif [ $Verbose -eq 1 ];then
+    SshOpts=""
+else
+    SshOpts="-q"
+fi
+
+
+ssh ${SshOpts} -o "BatchMode=yes" $host exit
+StatusCode=$?
+
+if [ $StatusCode -ne 0 ];then
+    if [ $Verbose -gt 1 ];then
+        echo "$host NOT_OK"
+    fi
+    exit $StatusCode
+fi
+
+if [ $Verbose -gt 1 ];then
+    echo "$host OK"
+fi
+

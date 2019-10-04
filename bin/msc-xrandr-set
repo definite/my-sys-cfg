@@ -1,0 +1,84 @@
+#!/bin/bash
+#set -eu
+MSG_LOG_TAG=Statup
+MSC_LOG_PREFIX="[msc-xrandr-set] "
+
+ScriptDir=$(dirname $(realpath ${BASH_SOURCE[0]}))
+
+if [ -r /etc/my-sys-cfg/local.sh ];then
+    source /etc/my-sys-cfg/local.sh
+else
+    : ${MSC_LIBEXEC_DIR:=/usr/libexec/my-sys-cfg}
+    export MSC_LIBEXEC_DIR
+fi
+source $MSC_LIBEXEC_DIR/functions.sh
+
+Prof=$($ScriptDir/msc-prof-get)
+OutputProfile=
+declare -A OutputMode
+declare -A OutputOptions
+XrandrOpts=()
+##== Function Start ==
+match(){
+    local prof_pattern="$1"
+    local output="$2"
+    local mode="$3"
+    local options="$4"
+
+    if eval "match_$(tr '[:upper:]' '[:lower:]'<<<$category) \"$3\"" ;then
+      msc_log "prof_pattern=$prof_pattern matched output=$ouput mode=$mode options=$options"
+        [ -z "$Result" ] && Result=$tag || Result+="+$tag"
+    fi
+}
+
+
+##== Main Start ===
+ConnectedOutputs=( $(xrandr -q | grep " connected" | awk '{print $1}') )
+while read -r line; do
+    IFS=$'\t' read -r -a tokens <<<"$line"
+    if [ -z "$OutputProfile" ];then
+        if [[ $Prof == ${tokens[0]} ]];then
+            OutputProfile=${tokens[0]}
+            msc_log "OutputProfile=$Prof" debug
+        else
+            continue
+        fi
+    fi
+
+    ## Only works on OutputProfile
+    if [ "${tokens[0]}" = "$OutputProfile" ];then
+        OutputMode["${tokens[1]}"]=${tokens[2]}
+        OutputOptions["${tokens[1]}"]="${tokens[3]}"
+    fi
+done < <(msc_file_list_effective $MSC_ETC_MSC_DIR/monitors.tsv)
+
+## Force Connect by adding  mode
+for o in "${!OutputMode[@]}";do
+    if [ "$o" = "*" ];then
+        continue
+    fi
+    for c in "${ConnectedOutputs[@]}"; do
+        if [ "$o" = "$c" ];then
+            break
+        fi
+    done
+    if [ "$o" != "$c" ];then
+        xrandr --addmode $o ${OutputMode[$o]}
+    fi
+done
+
+for o in "${ConnectedOutputs[@]}"; do
+    if [ ${OutputMode[$o]+1} ] ;then
+        ## Defined in monitors.tsv
+        XrandrOpts+=( --output $o ${OutputOptions[$o]} )
+    elif [ ${OutputMode["*"]+1} ] ;then
+        XrandrOpts+=( --output $o ${OutputOptions["*"]} )
+    else
+        XrandrOpts+=( --output $o --auto --rotate normal --right-of eDP-1 )
+    fi
+done
+
+
+msc_log "xrandr ${XrandrOpts[*]:-}"
+xrandr "${XrandrOpts[@]}"
+

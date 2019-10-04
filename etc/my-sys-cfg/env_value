@@ -1,0 +1,7 @@
+VISUAL=/usr/bin/vimx
+EDITOR=/usr/bin/vim
+PAGER=/usr/bin/less
+BLOCKSIZE=k
+
+#JAVA_HOME=/usr/lib/jvm/java
+#JDK_HOME=/usr/lib/jvm/java
