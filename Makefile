@@ -1,7 +1,6 @@
 include common.mk
 
 SUB_DIRS = bin etc libexec
-COMMON_TARGETS = debug diff install se-install uninstall update
 .phony: help $(COMMON_TARGETS) $(SUB_DIRS)
 
 help:

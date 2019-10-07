@@ -12,3 +12,7 @@ LIBEXEC_PREFIX ?= /usr/libexec
 
 # Internal executables for this project
 PRJ_LIBEXEC_PREFIX ?= ${LIBEXEC_PREFIX}/${NAME}
+
+# Common targets
+COMMON_TARGETS = debug diff install se-install uninstall update
+
