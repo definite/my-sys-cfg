@@ -71,12 +71,12 @@ match(){
     local pattern="$3"
     if eval "match_$(tr '[:upper:]' '[:lower:]'<<<$category) \"$3\"" ;then
         msc_log "tag $tag matched category $category pattern $pattern"
-        [ -z "$Result" ] && Result=$tag || Result+="+$tag"
+        Result+="$tag+"
     fi
 }
 
 ##== Main Start ==
-Result=
+Result='+'
 
 for feature_file in $MSC_ETC_MSC_DIR/features.d/*; do
     while read -r line ; do

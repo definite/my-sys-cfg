@@ -8,7 +8,7 @@
 #
 #    For example, if Lenovo_ThinkPad_Dock and Targus_Dock 
 #    both matched, the profile will have following feature list
-#    Lenovo_ThinkPad_Dock+Targus_Dock
+#    +Lenovo_ThinkPad_Dock+Targus_Dock
 #
 # 2. Category
 #    Valid values: HOST, NET_NAME, NEIGH_MAC and USB
