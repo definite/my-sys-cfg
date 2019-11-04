@@ -12,7 +12,7 @@ diff:
 
 install:
 	mkdir -p ${INSTALL_DIR}
-	tar -c ${FILES} | tar --overwrite --owner root -xv -C ${INSTALL_DIR}
+	tar -c ${FILES} | tar --overwrite --no-same-owner -xv --directory ${INSTALL_DIR}
 
 se-install: install
 	restorecon -DRv ${INSTALL_DIR} 
