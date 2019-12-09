@@ -65,11 +65,24 @@ match_net_name(){
     return 1
 }
 
+match_file_contain(){
+    local pattern="$1"
+    local option="$2"
+    if [[ ! -e $pattern ]];then
+        return 1
+    fi
+    if [[ ! $(cat "$pattern") = $option ]];then
+        return 1
+    fi
+    return 0
+}
+
 match(){
     local tag="$1"
     local category="$2"
     local pattern="$3"
-    if eval "match_$(tr '[:upper:]' '[:lower:]'<<<$category) \"$3\"" ;then
+    local option="${4:-}"
+    if eval "match_$(tr '[:upper:]' '[:lower:]'<<<$category) \"$pattern\" \"$option\"" ;then
         msc_log "tag $tag matched category $category pattern $pattern"
         Result+="$tag+"
     fi
