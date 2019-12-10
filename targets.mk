@@ -7,7 +7,7 @@ FILES=$(shell git ls-files | grep -v Makefile)
 TARGET_FILES=$(addprefix ${INSTALL_DIR}/, ${FILES})
 curr_makefile := $(lastword $(makefile_list))
 
-${INSTALL_DIR}/%:
+${INSTALL_DIR}/%: %
 	mkdir -p $(dir ${INSTALL_DIR}/$*)
 	chmod --changes ${DIR_MODE} $(dir ${INSTALL_DIR}/$*)
 	chown --changes ${INST_OWNER}:${INST_GROUP} $(dir ${INSTALL_DIR}/$*)
