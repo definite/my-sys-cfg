@@ -83,6 +83,9 @@ msc_exit_print_error(){
             $MSC_EXIT_CRIT )
                 msc_log "[CRIT] ${MscExitMsg}"
                 ;;
+            $MSC_EXIT_CRIT_INVALID_ARGUMENT )
+                msc_log "[CRIT] Invalid argument or option: ${MscExitMsg}"
+                ;;
             * )
                 msc_log "Unexpected Exit Code. ${MscExitMsg}" alert
                 ;;

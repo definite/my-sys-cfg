@@ -16,7 +16,10 @@ export MSC_EXIT_RETURN_FALSE=21
 export MSC_EXIT_RETURN_UNCHANGED=22
 export MSC_EXIT_WARNING=40
 export MSC_EXIT_ERR=60
+###     MSC_EXIT_CRIT(80): Generic Critical Error that must stop immediately
 export MSC_EXIT_CRIT=80
+###     MSC_EXIT_CRIT_INVALID_ARGUMENT(81): Invalid argument or option
+export MSC_EXIT_CRIT_INVALID_ARGUMENT=81
 
 ###
 ### MSC_LOG_LEVEL_DICT
