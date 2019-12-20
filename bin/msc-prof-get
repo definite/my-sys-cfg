@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu         # Exit when returns non-zero, Error when variable is unset.
 ### NAME
-###     msc-prof-get -
+###     msc-prof-get - Get the profile of current system
 ###
 ### SYNOPSIS
 ###     msc-prof-get [options]
