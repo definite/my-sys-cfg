@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 Verbose=1
 while getopts "qv" opt; do
     case $opt in
