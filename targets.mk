@@ -1,17 +1,24 @@
 # Contain common targets and helper functions
 INST_OWNER ?= root
 INST_GROUP ?= root
-FILE_MODE ?= 644
-DIR_MODE ?= 755
+# MODE=0 means unchnaged
+FILE_MODE ?= 0
+DIR_MODE ?= 0
 FILES=$(shell git ls-files | grep -v Makefile)
 TARGET_FILES=$(addprefix ${INSTALL_DIR}/, ${FILES})
 curr_makefile := $(lastword $(makefile_list))
 
+ifneq ($(FILE_MODE),0)
+INSTALL_MODE_OPT = -m $(FILE_MODE)
+endif
+
 ${INSTALL_DIR}/%: %
 	mkdir -p $(dir ${INSTALL_DIR}/$*)
+ifneq ($(DIR_MODE),0)
 	chmod --changes ${DIR_MODE} $(dir ${INSTALL_DIR}/$*)
+endif
 	chown --changes ${INST_OWNER}:${INST_GROUP} $(dir ${INSTALL_DIR}/$*)
-	install -t $(dir ${INSTALL_DIR}/$*) -o ${INST_OWNER} -g ${INST_GROUP} -m ${FILE_MODE} $*
+	install -t $(dir ${INSTALL_DIR}/$*) -o ${INST_OWNER} -g ${INST_GROUP} $(INSTALL_MODE_OPT) $*
 
 ### sudo make install: install to INSTALL_DIR, without override the newer file
 install: ${TARGET_FILES}
@@ -21,7 +28,9 @@ install-force:
 	mkdir -p ${INSTALL_DIR}
 	tar -c ${FILES} | tar --overwrite -xv --directory ${INSTALL_DIR}
 	cd ${INSTALL_DIR} && for f in ${FILES};do\
-		chmod --changes ${FILE_MODE} "$$f";\
+		if [ ${FILE_MODE} -gt 0 ];then\
+		   chmod --changes ${FILE_MODE} "$$f";\
+		fi;\
 		chown --changes ${INST_OWNER}:${INST_GROUP} "$$f";\
 		done
 
