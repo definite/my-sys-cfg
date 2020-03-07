@@ -1,10 +1,10 @@
 #!/bin/bash
 set -eu         # Exit when returns non-zero, Error when variable is unset.
 ### NAME
-###     msc-prof-get - Get the profile of current system
+###     msc-install-sys-dir - Install files to system directory
 ###
 ### SYNOPSIS
-###     msc-prof-get [options]
+###     msc-install-sys-dir [options]
 ###
 ### DESCRIPTION
 ###     Echo the profile of current system.
@@ -14,13 +14,19 @@ set -eu         # Exit when returns non-zero, Error when variable is unset.
 ###
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dchen@redhat.com
-###     Created in 2019-08-23 15:42:30
+###     Created in 2020-01-29 
 ###
-MSG_LOG_TAG=Statup
-MSC_LOG_PREFIX="[msc-prof-get] "
+MSG_LOG_TAG=Install
+MSC_LOG_PREFIX="[msc-install-sys-dir] "
 
-## Setup my-cfg-sys environment
-eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+ScriptDir=$(dirname $(realpath ${BASH_SOURCE[0]}))
+if [ -r /etc/my-sys-cfg/local.sh ];then
+    source /etc/my-sys-cfg/local.sh
+else
+    : ${MSC_LIBEXEC_DIR:=/usr/libexec/my-sys-cfg}
+    export MSC_LIBEXEC_DIR
+fi
+source $MSC_LIBEXEC_DIR/functions.sh
 
 ##== Function Start ==
 match_host(){
