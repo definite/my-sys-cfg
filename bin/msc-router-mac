@@ -1,5 +1,5 @@
 #/bin/sh
-#set -eu
+set -eu
 ScriptDir=$(dirname $(realpath ${BASH_SOURCE[0]}))
 RouterIp=$($ScriptDir/msc-router-ip)
 if [ -z "${RouterIp}" ]; then

@@ -117,6 +117,13 @@ msc_apply(){
 }
 
 ###
+### msc_program_print_help <cmd>
+###     Print in-line help of a program
+msc_help_print(){
+    sed -rne '/^###/ s/^###( )?//p' "$1"
+}
+
+###
 ### msc_str_contains_substr <str> <substr>
 ###     Whether the string contains substring.
 ###     Returns: 0 if <str> contains <substr>; 1 otherwise
