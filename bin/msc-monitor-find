@@ -1,0 +1,223 @@
+#!/bin/bash
+set -eu # Exit when returns non-zero, Error when variable is unset.
+### NAME
+###     msc-monitor-find - Find the xrandr infomation, such as EDID
+###
+### SYNOPSIS
+###     msc-monitor-find [options] [-d] [-l]
+###     msc-monitor-find [options] [Descriptor]
+###
+### DESCRIPTION
+###     This program find EDID descriptor of active monitors looking from:
+###
+###         Non-empty edid file within /sys/class/drm/ or xrandr
+###
+### ARGUMENT
+###     If Descriptor is specified, prints only the outputs that has the
+###     attribute and value of the attributes;
+###     otherwise just dump the decoded EDID.
+###
+### REQUIREMENTS
+###     edid-decode needs to be installed.
+###     For RHEL and Fedora, edid-decode is provided by xorg-x11-utils
+###
+### AUTHOR
+###     Ding-Yi Chen (definite), dchen@redhat.com
+###     Created in 2020-03-21 15:15:11
+###
+MSC_LOG_PREFIX="[msc-monitor-find]"
+trap msc_exit_print_error EXIT
+
+## Setup my-cfg-sys environment
+eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+
+##== Functions
+declare -A EdidDrmMap
+declare -A EdidXrandrMap
+declare -A EdidDescriptorMap
+
+BytePerLine=16
+
+extract_drm_edid() {
+    for f in /sys/class/drm/card*-*/edid; do
+        local edidLine=$(xxd -p -c $BytePerLine $f | tr -d '[:space:]')
+        if [ -z "$edidLine" ]; then
+            continue
+        fi
+        local connector=$(sed -e "s|^.*\(card[0-9a-zA-Z-]*\)/.*$|\1|" <<<$f)
+        EdidDrmMap["$edidLine"]=$connector
+    done
+}
+
+## Note: xrandr does not work without X
+extract_xrandr_edid() {
+    local buf=$(xrandr --prop | msc_extract_section "^[A-Za-z0-9-]+ connected")
+    local outputs=$(sed -rne "/^[A-Za-z0-9-]+ / s/^([A-Za-z0-9-]+).*$/\1/p" <<<"$buf")
+    if [ -z "$outputs" ]; then
+        exit $MSC_EXIT_RETURN_FALSE
+    fi
+
+    local edidLine
+    for out in $outputs; do
+        edidLine=$(msc_extract_section "^$out " <<<"$buf" |
+            msc_extract_section -c "/^[[:blank:]]*[0-9a-f]+/" "^[[:blank:]]*EDID:" |
+            sed -rne '/^[[:blank:]]*[0-9a-f]+/p' |
+            tr -d '[:space:]')
+        EdidXrandrMap["$edidLine"]=$out
+    done
+}
+
+decode_edid() {
+    ## edid-decode always return 1
+    xxd -r -p <<<"$1" | edid-decode || true
+}
+
+## extract_edid_descriptor <descriptor> "decoded txt"
+##     Retrieve the value of the field.
+extract_edid_descriptor() {
+    local descriptor="$1"
+    local edidTxt="$2"
+    msc_extract_section "^$descriptor:" <<<"$edidTxt" | sed -e "s/^$descriptor: //"
+}
+
+## Make session for multi-lines display
+print_section_header() {
+    if [ -n "$FilterConnector" -o -n "$FilterOutput" ]; then
+        return
+    fi
+    if [ ${#EdidDrmMap[@]} -gt 1 ]; then
+        if [ $ResultCount -gt 1 ]; then
+            ## Print empty as section separator
+            echo
+        fi
+        echo "### $connector"
+    fi
+}
+
+##== Parsing
+declare -A MODE
+MODE[DEFAULT]=0
+MODE[EDID]=1
+MODE[CONNECTOR]=2
+MODE[DESCRIPTOR]=3
+MODE[XRANDR_OUTPUT]=5
+DisplayMode=${MODE[DEFAULT]}
+FilterConnector=
+FilterDescriptor=
+FilterDescriptorValuePattern=
+FilterOutput=
+###
+### OPTIONS
+while getopts 'hC:cD:elO:oV:' opt; do
+    case $opt in
+    h)
+        ###     -h: Print usage
+        msc_help_print $0
+        exit $MSC_EXIT_OK
+        ;;
+    C)
+        ###     -C <connector>: Filter DRM connector. e.g. card0-DP-3
+        FilterConnector=$OPTARG
+        ;;
+    c)
+        ###     -c: Show DRM connector
+        DisplayMode=${MODE[CONNECTOR]}
+        ;;
+    D)
+        ###     -D <descriptor>: Filter descriptor. e.g. Manufacturer
+        FilterDescriptor="$OPTARG"
+        DisplayMode=${MODE[DESCRIPTOR]}
+        ;;
+    e)
+        ###     -d: Dump EDID hexstring
+        DisplayMode=${MODE[EDID]}
+        ;;
+    O)
+        ###     -O [output]: Filter output (e.g. eDP-1, DP-2-1)
+        FilterOutput=$OPTARG
+        ;;
+    o)
+        ###     -o: Show XRandr Output
+        DisplayMode=${MODE[XRANDR_OUTPUT]}
+        ;;
+    V)
+        ###     -V <descriptor=pattern>:
+        ###         Value of descriptor should match this glob pattern.
+        FilterDescriptor=${OPTARG%%=*}
+        FilterDescriptorValuePattern=${OPTARG#*=}
+        ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if xrandr 2>&1 >/dev/null; then
+    XRandrEnabled=1
+else
+    ## Not in X
+    XRandrEnabled=0
+fi
+
+##== Main Start ==
+extract_drm_edid
+
+if [ $XRandrEnabled -eq 1 ]; then
+    extract_xrandr_edid
+fi
+
+ResultCount=0
+
+for edidLine in "${!EdidDrmMap[@]}"; do
+    ## Filter out the irrevelent results
+    connector=${EdidDrmMap[$edidLine]}
+    if [ -n "$FilterConnector" -a "$FilterConnector" != $connector ]; then
+        continue
+    fi
+
+    output=${EdidXrandrMap[$edidLine]}
+    if [ $XRandrEnabled -eq 1 ]; then
+        if [ -n "$FilterOutput" -a "$FilterOutput" != "$output" ]; then
+            continue
+        fi
+    fi
+
+    edidTxt=$(decode_edid "$edidLine")
+
+    if [ -n "$FilterDescriptorValuePattern" ]; then
+        DescriptorValue=$(extract_edid_descriptor "$FilterDescriptor" "$edidTxt")
+        if [[ ! "$DescriptorValue" == $FilterDescriptorValuePattern ]]; then
+            continue
+        fi
+    fi
+
+    ## Start displaying revelent result
+    : $((ResultCount++))
+    case $DisplayMode in
+    ${MODE[CONNECTOR]})
+        echo $connector
+        ;;
+    ${MODE[DESCRIPTOR]})
+        extracted=$(extract_edid_descriptor "$FilterDescriptor" "$edidTxt")
+
+        if [[ "$extracted" =~ $FilterDescriptorValuePattern ]]; then
+            print_section_header
+            echo "$extracted"
+        fi
+        ;;
+    ${MODE[EDID]})
+        print_section_header
+        fold -w 32 <<<"$edidLine"
+        ;;
+    ${MODE[XRANDR_OUTPUT]})
+        echo $output
+        ;;
+    *)
+        print_section_header
+        echo "$edidTxt"
+        ;;
+    esac
+done
+
+if [[ $ResultCount -lt 1 ]]; then
+    exit $MSC_EXIT_RETURN_FALSE
+fi
+exit $MSC_EXIT_OK

@@ -1,0 +1,53 @@
+# my-sys-cfg
+:toc:
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 3
+:showtitle:
+
+my-sys-cfg provides building blocks for system that take actions when peripheral
+changes.
+
+For example, my-sys-cfg resolves the re-docking problems which are caused by
+the changing XRandr output name after undocking and docking.
+
+_Note that before version 1.0, the format of configuration file might change_
+
+## Dependencies
+ - edid-decode ( provided by `xorg-x11-utils`)
+ - (Optional) xrandr
+
+## Usages
+Most commands show on-line helps with option `-h`. For example,
+following command show the on-line help of msc-monitor-find
+
+[source,sh]
+----
+msc-monitor-find -h
+----
+
+### Notable Commands
+#### msc-monitor-find
+This command finds monitor information with `EDID`, `xrandr`,
+and `/sys/class/drm`.
+
+Following command show information of all connected monitors
+[source,sh]
+----
+msc-monitor-find
+----
+
+If you are only interested in DRM connectors
+[source,sh]
+----
+msc-monitor-find -c
+----
+
+You can also find the XRandr output that connect to monitor
+whose Manufacturer matches `GSM*`:
+[source,sh]
+----
+msc-monitor-find -V "Manufacturer=*" -o
+----
+
+Show detailed help with option `-h`

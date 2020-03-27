@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu         # Exit when returns non-zero, Error when variable is unset.
+set -eu # Exit when returns non-zero, Error when variable is unset.
 ### NAME
 ###     msc-env-find - Detect the environment to be used by my-sys-cfg
 ###
@@ -7,12 +7,12 @@ set -eu         # Exit when returns non-zero, Error when variable is unset.
 ###     msc-env-find [options]
 ###
 ### DESCRIPTION
-###     This program will find msc-env-find location to be used, 
+###     This program will find msc-env-find location to be used,
 ###     then print the corresponding environment variables.
 ###
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dingyichen@gmail.com
-###     Created in 2020-01-29 
+###     Created in 2020-01-29
 ###
 
 ##== Detection Start ==
@@ -20,22 +20,23 @@ Installed=0
 MSC_BIN_DIR=$(dirname $(realpath ${BASH_SOURCE[0]}))
 ## if MSC_BIN_DIR in PATH, then my-sys-cfg bin is installed
 case ":$PATH:" in
-    *:${MSC_BIN_DIR}:* )
-        MSC_LIBEXEC_DIR=/usr/libexec/my-sys-cfg
-        Installed=1
-        ;;
-    * )
-        MSC_LIBEXEC_DIR=$(realpath ${MSC_BIN_DIR}/../libexec )
-        ;;
+*:${MSC_BIN_DIR}:*)
+    MSC_LIBEXEC_DIR=/usr/libexec/my-sys-cfg
+    Installed=1
+    ;;
+*)
+    MSC_LIBEXEC_DIR=$(realpath ${MSC_BIN_DIR}/../libexec)
+    ;;
 esac
 
 ## source consts, so we can use them later in this program
 source $MSC_LIBEXEC_DIR/const.sh
+source $MSC_LIBEXEC_DIR/functions.sh
 
-if [ $Installed -eq 1 ];then
+if [ $Installed -eq 1 ]; then
     MSC_ETC_MSC_DIR=/etc/my-sys-cfg
 else
-    MSC_ETC_MSC_DIR=$(realpath ${MSC_BIN_DIR}/../etc/my-sys-cfg )
+    MSC_ETC_MSC_DIR=$(realpath ${MSC_BIN_DIR}/../etc/my-sys-cfg)
 fi
 ##== Parse Start ==
 SourceFunctionsShPrint=0
@@ -43,30 +44,26 @@ SourceFunctionsShPrint=0
 ### OPTIONS
 while getopts "hf" opt; do
     case $opt in
-###     -h: Show this help       
-        h)
-            sed -rne '/^###/ s/^###( )?//p' "$ThisScript"
-            exit $MSC_EXIT_OK
-            ;;
-###            
-###     -f: Print "source <path/to/functions.sh>"
-###         So calling script can just use "eval $(msc-env-find -f)"
-        f)
-            SourceFunctionsShPrint=1
-            ;;
-        *)
-            MscExitMsg="Option $opt"
-            exit $MSG_EXIT_INVALID_ARGUMENT
-            ;;
+    h)
+        ###     -h: Show this help
+        msc_help_print $0
+        exit $MSC_EXIT_OK
+        ;;
+    f)
+        ###
+        ###     -f: Print "source <path/to/functions.sh>"
+        ###         So calling script can just use "eval $(msc-env-find -f)"
+        SourceFunctionsShPrint=1
+        ;;
     esac
 done
-shift $((OPTIND-1));
+shift $((OPTIND - 1))
 
 for v in MSC_BIN_DIR MSC_LIBEXEC_DIR MSC_ETC_MSC_DIR; do
     echo "export $v=$(eval echo \$$v)"
 done
 
-if [ $SourceFunctionsShPrint -eq 1 ];then
+if [ $SourceFunctionsShPrint -eq 1 ]; then
     echo "source $MSC_LIBEXEC_DIR/const.sh"
     echo "source $MSC_LIBEXEC_DIR/functions.sh"
 fi
