@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu         # Exit when returns non-zero, Error when variable is unset.
+set -eu # Exit when returns non-zero, Error when variable is unset.
 ### NAME
 ###     msc-ssl-csr-new - Generate a CSR for requesting SSL Certificate
 ###
@@ -14,8 +14,8 @@ set -eu         # Exit when returns non-zero, Error when variable is unset.
 ###     Created in 2019-12-29 14:53
 ###
 
-ThisScript=$(realpath ${BASH_SOURCE[0]})
-eval $($(dirname $ThisScript)/msc-env-find -f)
+## Setup my-cfg-sys environment
+eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 
 ##== Function Start ==
 
@@ -23,52 +23,48 @@ eval $($(dirname $ThisScript)/msc-env-find -f)
 Host=$(cat /etc/hostname)
 Name=
 NoIp=0
-Days=3650   # 10 years
+Days=3650 # 10 years
 
 ### OPTIONS
 while getopts "hD:H:N:n" opt; do
     case $opt in
-###     -h: Show this help
-        h)
-            sed -rne '/^###/ s/^###( )?//p' "$ThisScript"
-            exit $MSC_EXIT_OK
-            ;;
-###
-###     -D <days>: Certificate valid for this many days
-###         Default: 3650  (10 Years)
-        D)
-            Days=$OPTARG
-            ;;
-###
-###     -H <host.fqdn>: FQDN of the host
-###         Default: content of /etc/hostname
-        H)
-            Host=$OPTARG
-            ;;
-###
-###     -N <name>: Use as filename prefix
-###         Default: Same as host.fqdn
-         N)
-            Name=$OPTARG
-            ;;
-###
-###     -n: No IP fill in SAN
-###         Without this option, the IP resolve with "dig +short" will be used
-###         in Subject Alternate Name (SAN). This option prevent this.
-         n)
-            NoIp=1
-            ;;
-        *)
-            MscExitMsg="Option $opt"
-            exit $MSG_EXIT_INVALID_ARGUMENT
-            ;;
+    h)
+        ###     -h: Show this help
+        msc_help_print $0
+        exit $MSC_EXIT_OK
+        ;;
+    D)
+        ###
+        ###     -D <days>: Certificate valid for this many days
+        ###         Default: 3650  (10 Years)
+        Days=$OPTARG
+        ;;
+    H)
+        ###
+        ###     -H <host.fqdn>: FQDN of the host
+        ###         Default: content of /etc/hostname
+        Host=$OPTARG
+        ;;
+    N)
+        ###
+        ###     -N <name>: Use as filename prefix
+        ###         Default: Same as host.fqdn
+        Name=$OPTARG
+        ;;
+    n)
+        ###
+        ###     -n: No IP fill in SAN
+        ###         Without this option, the IP resolve with "dig +short" will be used
+        ###         in Subject Alternate Name (SAN). This option prevent this.
+        NoIp=1
+        ;;
     esac
 done
-shift $((OPTIND-1));
+shift $((OPTIND - 1))
 
 ### ARGUMENTS
 ###     Host.domain: FQDN of the host
-if [[ -n "${1:-}" ]];then
+if [[ -n "${1:-}" ]]; then
     Host="$1"
 else
     Host=$(cat /etc/hostname)
@@ -76,20 +72,22 @@ fi
 : ${Ip:=$(dig +short $Host)}
 : ${Name:=$Host}
 SubjectAltName="DNS:$Host"
-if [[ $NoIp -eq 0 ]];then
+if [[ $NoIp -eq 0 ]]; then
     Ip=$(dig +short $Host)
     SubjectAltName+=",IP:$Ip"
 fi
 
-echo "SubjectAltName=$SubjectAltName" > /dev/stderr
+echo "SubjectAltName=$SubjectAltName" >/dev/stderr
 
 ##== Main Start ==
 openssl req -new -newkey rsa:4096 -sha256 -nodes \
     -keyout $Name.key -out $Name.csr -extensions san -config \
-    <(echo "[req]";
-        echo distinguished_name=req;
-        echo "[san]";
-        echo "subjectAltName=$SubjectAltName")\
+    <(
+        echo "[req]"
+        echo distinguished_name=req
+        echo "[san]"
+        echo "subjectAltName=$SubjectAltName"
+    ) \
     -subj "/CN=$Host"
 
 # vim: set et si ts=4 sw=4:

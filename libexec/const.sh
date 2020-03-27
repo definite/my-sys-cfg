@@ -1,26 +1,38 @@
 ### Usage: source const.sh
 ###     Definition of constants
-MSC_VERSION=0.6.0
+MSC_VERSION=0.7.0
 
 : ${MSC_ETC_MSC_DIR:=/etc/my-sys-cfg}
 export MSC_ETC_MSC_DIR
 
-if [ -r $MSC_ETC_MSC_DIR/local.sh ];then
+if [ -r $MSC_ETC_MSC_DIR/local.sh ]; then
     source $MSC_ETC_MSC_DIR/local.sh
 fi
 
 ### Exit Statuses
 export MSC_EXIT_OK=0
 export MSC_EXIT_UNHANDLED=1
-export MSC_EXIT_RETURN=20
-export MSC_EXIT_RETURN_FALSE=21
-export MSC_EXIT_RETURN_UNCHANGED=22
-export MSC_EXIT_WARNING=40
-export MSC_EXIT_ERR=60
-###     MSC_EXIT_CRIT(80): Generic Critical Error that must stop immediately
+export MSC_EXIT_RETURN=10
+export MSC_EXIT_RETURN_UNCHANGED=11
+###
+###     MSC_EXIT_RETURN_FALSE(19)
+###         Not an error, just a retrun value that means false.
+###         Such as query whether a record exists.
+export MSC_EXIT_RETURN_FALSE=19
+export MSC_EXIT_WARNING=20
+export MSC_EXIT_ERR=50
+###
+###     MSC_EXIT_CRIT(80)
+###         Generic Critical Error that must stop immediately
 export MSC_EXIT_CRIT=80
-###     MSC_EXIT_CRIT_INVALID_ARGUMENT(81): Invalid argument or option
+###
+###     MSC_EXIT_CRIT_INVALID_ARGUMENT(81)
+###         Invalid argument or option
 export MSC_EXIT_CRIT_INVALID_ARGUMENT=81
+###
+###     MSC_EXIT_DEPENDENCIES_MISSING(82)
+###         Dependencies missing, such as programs are not installed.
+export MSC_EXIT_CRIT_DEPENDENCIES_MISSING=82
 
 ###
 ### MSC_LOG_LEVEL_DICT

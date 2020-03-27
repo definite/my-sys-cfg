@@ -1,6 +1,5 @@
 #!/bin/bash
 #set -eu
-MSG_LOG_TAG=Statup
 MSC_LOG_PREFIX="[msc-xrandr-set] "
 
 ## Setup my-cfg-sys environment
@@ -12,25 +11,44 @@ declare -A OutputMode
 declare -A OutputOptions
 XrandrOpts=()
 ##== Function Start ==
-match(){
+match() {
     local prof_pattern="$1"
     local output="$2"
     local mode="$3"
     local options="$4"
 
-    if eval "match_$(tr '[:upper:]' '[:lower:]'<<<$category) \"$3\"" ;then
-      msc_log "prof_pattern=$prof_pattern matched output=$ouput mode=$mode options=$options"
+    if eval "match_$(tr '[:upper:]' '[:lower:]' <<<$category) \"$3\""; then
+        msc_log "prof_pattern=$prof_pattern matched output=$ouput mode=$mode options=$options"
         [ -z "$Result" ] && Result=$tag || Result+="+$tag"
     fi
 }
 
+##== Parse Start ===
+MonitorsTSV="$MSC_ETC_MSC_DIR/monitors.tsv"
+###
+### OPTIONS
+while getopts 'hF:' opt; do
+    case $opt in
+    h)
+        ###     -h: Print usage
+        msc_help_print $0
+        exit $MSC_EXIT_OK
+        ;;
+    F)
+        ###     -F <monitors.tsv>: Use the specified monitors.tsv instead
+        MonitorsTSV="$OPTARG"
+        ;;
+    esac
+done
+shift $((OPTIND - 1))
 
 ##== Main Start ===
-ConnectedOutputs=( $(xrandr -q | grep " connected" | awk '{print $1}') )
+declare -A XrandrOutputMap
+ConnectedOutputArray=($(${MSC_BIN_DIR}/msc-monitor-find -o))
 while read -r line; do
     IFS=$'\t' read -r -a tokens <<<"$line"
-    if [ -z "$OutputProfile" ];then
-        if [[ $Prof == ${tokens[0]} ]];then
+    if [ -z "$OutputProfile" ]; then
+        if [[ $Prof == ${tokens[0]} ]]; then
             OutputProfile=${tokens[0]}
             msc_log "OutputProfile=$Prof" debug
         else
@@ -38,40 +56,33 @@ while read -r line; do
         fi
     fi
 
-    ## Only works on OutputProfile
-    if [ "${tokens[0]}" = "$OutputProfile" ];then
-        OutputMode["${tokens[1]}"]=${tokens[2]}
-        OutputOptions["${tokens[1]}"]="${tokens[3]}"
+    ## Only works on matched OutputProfile
+    if [ "${tokens[0]}" = "$OutputProfile" ]; then
+        MonitorFindOpts=$(msc_quotes_strip "${tokens[1]}")
+        XrandrOutput=$(${MSC_BIN_DIR}/msc-monitor-find -o $MonitorFindOpts)
+        XrandrOpts=$(msc_quotes_strip "${tokens[2]}")
+        msc_log "Matched outuput: $XrandrOutput $XrandrOpts" info
+        #xrandr --output $XrandrOutput --off
+        #sleep 1
+        XrandrOutputMap[$XrandrOutput]="$XrandrOpts"
     fi
-done < <(msc_file_list_effective $MSC_ETC_MSC_DIR/monitors.tsv)
+done < <(msc_file_list_effective "$MonitorsTSV")
 
-## Force Connect by adding  mode
-for o in "${!OutputMode[@]}";do
-    if [ "$o" = "*" ];then
-        continue
-    fi
-    for c in "${ConnectedOutputs[@]}"; do
-        if [ "$o" = "$c" ];then
-            break
+## Handle the output that is not matched
+
+lastOutput=eDP-1
+XrandrFinalOpts=
+for XrandrOutput in "${ConnectedOutputArray[@]}"; do
+    if [ -z "${XrandrOutputMap[$XrandrOutput]+a}" ]; then
+        if [ $XrandrOutput = eDP-1 ]; then
+            XrandrOutputMap["$XrandrOutput"]="--auto --rotate normal"
+        else
+            XrandrOutputMap["$XrandrOutput"]="--auto --rotate normal --right-of $lastOutput"
         fi
-    done
-    if [ "$o" != "$c" ];then
-        xrandr --addmode $o ${OutputMode[$o]}
+        msc_log "Failover output: $XrandrOutputout ${XrandrOutputMap[$XrandrOutput]}" notice
+        lastOutput=$XrandrOutput
     fi
+    XrandrFinalOpts+=" --output $XrandrOutput ${XrandrOutputMap[$XrandrOutput]}"
 done
 
-for o in "${ConnectedOutputs[@]}"; do
-    if [ ${OutputMode[$o]+1} ] ;then
-        ## Defined in monitors.tsv
-        XrandrOpts+=( --output $o ${OutputOptions[$o]} )
-    elif [ ${OutputMode["*"]+1} ] ;then
-        XrandrOpts+=( --output $o ${OutputOptions["*"]} )
-    else
-        XrandrOpts+=( --output $o --auto --rotate normal --right-of eDP-1 )
-    fi
-done
-
-
-msc_log "xrandr ${XrandrOpts[*]:-}"
-xrandr "${XrandrOpts[@]}"
-
+msc_run_and_log info "xrandr $XrandrFinalOpts"
