@@ -1,0 +1,8 @@
+# Profile	    Condition	Options
++ThinkPad*_Dock*+dchen*	"-O eDP-1"	"--auto --rotate normal --pos 3120x360"
++ThinkPad*_Dock*+dchen*	"-C DP-4"	"--auto --rotate normal --pos 1200x240 --primary"
++ThinkPad*_Dock*+dchen*	"-C DP-5"	"--auto --rotate left --pos 0x0"
++*ThinkPad*_Dock*+dchen-sec*	"-O eDP-1"	"--auto --rotate normal --pos 0x1080 --primary"
++*ThinkPad*_Dock*+dchen-sec*	"-V Manufacturer=GSM*"	"--auto --rotate normal --pos 0x0"
++Targus_Dock+centre*	"-C eDP-1"	"--auto --rotate normal --primary"
++Targus_Dock+centre*	"-V Manufacturer=GSM"	"--auto --rotate normal --left-of eDP-1"

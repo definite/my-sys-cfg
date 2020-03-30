@@ -51,3 +51,6 @@ msc-monitor-find -V "Manufacturer=*" -o
 ----
 
 Show detailed help with option `-h`
+
+#### msc-prof-get
+This command returns *profile*: a string that contains detected features.
