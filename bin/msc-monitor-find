@@ -51,6 +51,10 @@ extract_drm_edid() {
 
 ## Note: xrandr does not work without X
 extract_xrandr_edid() {
+    local xrandrProp=$(xrandr --prop 2>/dev/null)
+    if [ -z "$xrandrProp" ]; then
+        return $MSC_EXIT_RETURN_FALSE
+    fi
     local buf=$(xrandr --prop | msc_extract_section "^[A-Za-z0-9-]+ connected")
     local outputs=$(sed -rne "/^[A-Za-z0-9-]+ / s/^([A-Za-z0-9-]+).*$/\1/p" <<<"$buf")
     if [ -z "$outputs" ]; then
@@ -150,18 +154,14 @@ while getopts 'hC:cD:elO:oV:' opt; do
 done
 shift $((OPTIND - 1))
 
-if xrandr 2>&1 >/dev/null; then
+##== Main Start ==
+extract_drm_edid
+
+if extract_xrandr_edid; then
     XRandrEnabled=1
 else
     ## Not in X
     XRandrEnabled=0
-fi
-
-##== Main Start ==
-extract_drm_edid
-
-if [ $XRandrEnabled -eq 1 ]; then
-    extract_xrandr_edid
 fi
 
 ResultCount=0
@@ -173,8 +173,8 @@ for edidLine in "${!EdidDrmMap[@]}"; do
         continue
     fi
 
-    output=${EdidXrandrMap[$edidLine]}
     if [ $XRandrEnabled -eq 1 ]; then
+        output=${EdidXrandrMap[$edidLine]}
         if [ -n "$FilterOutput" -a "$FilterOutput" != "$output" ]; then
             continue
         fi
@@ -208,7 +208,11 @@ for edidLine in "${!EdidDrmMap[@]}"; do
         fold -w 32 <<<"$edidLine"
         ;;
     ${MODE[XRANDR_OUTPUT]})
-        echo $output
+        if [ $XRandrEnabled -eq 1 ]; then
+            echo $output
+        else
+            msc_fail "Failed to query XRandr, perhaps not in X" $MSC_EXIT_CRIT
+        fi
         ;;
     *)
         print_section_header

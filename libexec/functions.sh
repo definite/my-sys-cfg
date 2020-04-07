@@ -6,8 +6,15 @@ export MSC_LIBEXEC_DIR
 source $MSC_LIBEXEC_DIR/const.sh
 
 : ${MSC_LOG_FACILITY:=user}
-: ${MSC_LOG_LEVEL:=info}
+: ${MSC_LOG_LEVEL:=notice}
 : ${MSC_LOG_PREFIX:=}
+
+###
+### MSG_LOG_OPTIONS
+###     Options for logger. Default is '-s', i.e. also print error message to
+###     stderr.
+###     Default: -s
+: ${MSC_LOG_OPTIONS:="-s"}
 ###
 ### MSC_LOG_TAG
 ###     Marked the log with a specified tag.
@@ -15,13 +22,14 @@ source $MSC_LIBEXEC_DIR/const.sh
 : ${MSC_LOG_TAG:=my-sys-cfg}
 
 ##
-## MscLogWorstLevel
+## MscLogWorstStatusCode
 ##     Worst (Biggest) status code encountered
 ##     This is mainly for the log level 'error', which means the eventually
 ##     the program will fail, but no need to exit immediately.
-MscLogWorstLevel=$MSC_EXIT_OK
+MscLogWorstStatusCode=$MSC_EXIT_OK
 MscExitMsg=
 
+###
 ### msc_log <msg> [logLevel [logger options...]]
 ###   Log messages with given level
 ###
@@ -31,77 +39,104 @@ MscExitMsg=
 ###     logger-options: other option to pass to logger
 ###   Environments:
 ###     MSG_LOG_TAG: Tag the log message
-
 msc_log() {
     local msg="$1"
     shift
-    local logLevel=$MSC_LOG_LEVEL
+    local logLevel
+    local finalMsg="$MSC_LOG_PREFIX"
+
+    ## Detemine log level
     if [ -n "${1:-}" ]; then
         logLevel=$1
         shift
+    else
+        logLevel=$MSC_LOG_LEVEL
     fi
-    logger ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$MSC_LOG_PREFIX$msg" "$@"
+
+    ## Omit the lower priority
+    if [ ${MSC_LOG_LEVEL_DICT[$logLevel]} -lt ${MSC_LOG_LEVEL_DICT[$MSC_LOG_LEVEL]} ]; then
+        return
+    fi
+
+    case $logLevel in
+    emerg)
+        finalMsg+="[EMERG] $msg"
+        ;;
+    alert)
+        finalMsg+="[ALERT] $msg"
+        ;;
+    crit)
+        finalMsg+="[CRIT] $msg"
+        ;;
+    err)
+        finalMsg+="[ERR] $msg"
+        ;;
+    warning)
+        finalMsg+="[Warning] $msg"
+        ;;
+    notice)
+        finalMsg+="[notice] $msg"
+        ;;
+    *)
+        finalMsg+="$msg"
+        ;;
+    esac
+    logger $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$finalMsg"
 }
 
+###
+### msc_exit_status_to_log_level <exitStatus>
+msc_exit_status_to_log_level() {
+    local exitStatus=$1
+    local logLevel
+    if [ $exitStatus -eq $MSC_EXIT_OK ]; then
+        echo info
+    elif [ $exitStatus -le $MSC_EXIT_RETURN ]; then
+        echo $MSC_LOG_LEVEL
+    elif [ $exitStatus -le $MSC_EXIT_WARNING ]; then
+        echo warning
+    elif [ $exitStatus -le $MSC_EXIT_ERR ]; then
+        echo err
+    elif [ $exitStatus -le $MSC_EXIT_CRIT ]; then
+        echo crit
+    else
+        echo alert
+    fi
+}
+
+###
 ### msc_exit_print_error
 ###   print error when program exit
 ###   Insert "trap msc_exit_print_error EXIT" to activate the function
 msc_exit_print_error() {
-    local exitStatus=${?:-$MscLogWorstLevel}
-    if [[ -n "${exitStatus-}" ]]; then
-        case $exitStatus in
-        $MSC_EXIT_OK)
-            msc_log "Done." debug
-            ;;
-        $MSC_EXIT_UNHANDLED)
-            msc_log "Unhandled. ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_RETURN_FALSE)
-            msc_log "Return false. ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_RETURN_UNCHANGED)
-            msc_log "Unchanged. ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_WARNING)
-            msc_log "[WARNING] ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_ERR)
-            msc_log "[ERR] ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_CRIT)
-            msc_log "[CRIT] ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_CRIT_INVALID_ARGUMENT)
-            msc_log "[CRIT] Invalid argument or option: ${MscExitMsg}"
-            ;;
-        $MSC_EXIT_CRIT_DEPENDENCIES_MISSING)
-            msc_log "[CRIT] Dependencies missing: ${MscExitMsg}"
-            ;;
-        *)
-            msc_log "Unexpected Exit Code $exitStatus. ${MscExitMsg}" alert
-            ;;
-        esac
+    local exitStatus=${?:-$MscLogWorstStatusCode}
+    if [ -n "${MscExitMessageDict[$exitStatus]}" ]; then
+        msc_log "$MscExitMsg" $(msc_exit_status_to_log_level $exitStatus)
+    else
+        msc_log "Undefined Exit Code $exitStatus Error: $MscExitMsg" alert
     fi
-    exit ${exitStatus}
+    exit $exitStatus
 }
 
 ###
-### msc_fail <msg> <logLevel>
+### msc_fail <msg> <exitStatus>
 ###     Indicate something is wrong.
 ###     Exit program if logLevel is equal or larger than MSC_LOG_LEVEL_DICT['crit']
 msc_fail() {
     local msg="$1"
-    local logLevel=$2
-    if [[ $logLevel -ge ${MSC_LOG_LEVEL_DICT['crit']} ]]; then
-        MscExitMsg="$2"
+    local exitStatus=$2
+    if [ $exitStatus -ge $MscLogWorstStatusCode ]; then
+        MscLogWorstStatusCode=$exitStatus
+    fi
+    if [[ $exitStatus -gt ${MSC_LOG_LEVEL_DICT['err']} ]]; then
+        ## Crit
+        MscExitMsg="$1"
         ## Should be handle by msc_exit_print_error
-        exit $logLevel
+        exit $exitStatus
     else
         ## Not yet exit
-        msc_log "$msg" $logLevel
-        if [ $logLevel -ge $MscLogWorstLevel ]; then
-            MscLogWorstLevel=$logLevel
-        fi
+        msc_log "$msg" $(msc_exit_status_to_log_level $exitStatus)
+
     fi
 }
 
