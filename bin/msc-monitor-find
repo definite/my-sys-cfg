@@ -4,22 +4,26 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###     msc-monitor-find - Find the xrandr infomation, such as EDID
 ###
 ### SYNOPSIS
-###     msc-monitor-find [options] [-d] [-l]
-###     msc-monitor-find [options] [Descriptor]
+###     msc-monitor-find [options] -D [Descriptor]
 ###
 ### DESCRIPTION
 ###     This program find EDID descriptor of active monitors looking from:
 ###
 ###         Non-empty edid file within /sys/class/drm/ or xrandr
 ###
-### ARGUMENT
-###     If Descriptor is specified, prints only the outputs that has the
-###     attribute and value of the attributes;
-###     otherwise just dump the decoded EDID.
-###
 ### REQUIREMENTS
 ###     edid-decode needs to be installed.
 ###     For RHEL and Fedora, edid-decode is provided by xorg-x11-utils
+###
+### EXAMPLES
+###     To list the Manufacturer of each monitor, run:
+###
+###         msc-monitor-find -D Manufacturer
+###
+###     To find the connector that associated with monitor whose 
+###      manufacturer that start with AX:
+###
+###         msc-monitor-find -V 'Manufacturer=AX*' -o
 ###
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dchen@redhat.com
