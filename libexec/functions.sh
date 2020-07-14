@@ -305,10 +305,10 @@ msc_run_if_not_already() {
         if which "$1" >&/dev/null; then
             $@ &
         else
-            msc_log "run_if_not_already: $1 not found, skip" warn
+            msc_log "run_if_not_already: $1 not found, skip" warning
         fi
         msc_log "run_if_not_already run $processName: $*"
     else
-        msc_log "already run $processName" warn
+        msc_log "already run $processName" warning
     fi
 }
