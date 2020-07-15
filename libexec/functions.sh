@@ -271,7 +271,7 @@ msc_quotes_strip() {
 msc_run_and_log() {
     local logLevel=$1
     shift
-    msc_log "Run: $@" $logLevel
+    msc_log "Run: $*" $logLevel
     $@
 }
 
