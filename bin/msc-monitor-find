@@ -161,12 +161,19 @@ shift $((OPTIND - 1))
 ##== Main Start ==
 extract_drm_edid
 
-if extract_xrandr_edid; then
-    XRandrEnabled=1
-else
-    ## Not in X
-    XRandrEnabled=0
-fi
+case $XDG_SESSION_TYPE in
+    x11)
+        extract_xrandr_edid
+        XRandrEnabled=1
+        ;;
+    wayland)
+        XRandrEnabled=0
+        ;;
+    *)
+        ## Not in X, or unknown
+        XrandrEnabled=0
+        ;;
+esac
 
 ResultCount=0
 
@@ -229,3 +236,5 @@ if [[ $ResultCount -lt 1 ]]; then
     exit $MSC_EXIT_RETURN_FALSE
 fi
 exit $MSC_EXIT_OK
+
+## vim:et:ts=4:sw=4:si

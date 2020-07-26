@@ -27,7 +27,7 @@ MscExitMessageDict[$MSC_EXIT_RETURN_UNCHANGED]=" Unchanged."
 ###     MSC_EXIT_RETURN_FALSE(2)
 ###         Nothing wrong, just a return value that means false.
 ###         Such as query whether a record exists.
-export MSC_EXIT_RETURN_FALSE=1
+export MSC_EXIT_RETURN_FALSE=2
 MscExitMessageDict[$MSC_EXIT_RETURN_FALSE]=" Return false."
 ###
 ###     MSC_EXIT_RETURN(30)
@@ -50,9 +50,9 @@ MscExitMessageDict[$MSC_EXIT_ERR]="[ERR]"
 export MSC_EXIT_CRIT_ARGUMENTS_INVALID=91
 MscExitMessageDict[$MSC_EXIT_CRIT_ARGUMENTS_INVALID]="[CRIT] Arguments Invalid:"
 ###
-###     MSC_EXIT_CRIT+DEPENDENCIES_MISSING(82)
+###     MSC_EXIT_CRIT_DEPENDENCIES_MISSING(92)
 ###         Dependencies missing, such as programs are not installed.
-export MSC_EXIT_CRIT_DEPENDENCIES_MISSING=82
+export MSC_EXIT_CRIT_DEPENDENCIES_MISSING=92
 MscExitMessageDict[$MSC_EXIT_CRIT_DEPENDENCIES_MISSING]="[CRIT] Dependencies Missing:"
 ###
 ###     MSC_EXIT_CRIT(120)
