@@ -28,11 +28,14 @@ if [ "${ZSH_NAME:-}" = "zsh" ]; then
         ## restart running processes on exit
         #setopt HUP
 
-        ## history
-        setopt APPEND_HISTORY
-        ## for sharing history between zsh processes
-        setopt INC_APPEND_HISTORY
-        setopt SHARE_HISTORY
+        ## History
+        ##   Uncomment for sessions to append their history list to the history file instead of replacing it
+        #setopt APPEND_HISTORY
+
+        ##   Uncomment for sessions to append their history as soon as they
+        ## are entered, otherwise same with APPEND_HISTORY
+        #setopt INC_APPEND_HISTORY
+        #setopt SHARE_HISTORY
 
         ## never ever beep ever
         #setopt NO_BEEP

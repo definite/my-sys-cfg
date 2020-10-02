@@ -24,7 +24,7 @@ endif
 install: ${TARGET_FILES}
 
 ### sudo make install-force: install to INSTALL_DIR, and overwrite the target files.
-install-force:  
+install-force:
 	mkdir -p ${INSTALL_DIR}
 	tar -c ${FILES} | tar --overwrite -xv --directory ${INSTALL_DIR}
 	cd ${INSTALL_DIR} && for f in ${FILES};do\
@@ -36,7 +36,12 @@ install-force:
 
 ### sudo make se-install: install and set the SELinux labels
 se-install: ${TARGET_FILES}
-	restorecon -DRv ${INSTALL_DIR} 
+	## RHEL 7 and earlier does not support restorecon -D
+	if restorecon -h |& grep '\-[^ ]*D' > /dev/null; then\
+		restorecon -DRv ${INSTALL_DIR};\
+	else\
+		restorecon -Rv ${INSTALL_DIR};\
+	fi
 
 ### make debug: Show the variable values
 debug:
@@ -48,8 +53,8 @@ debug:
 diff:
 	for f in ${FILES}; do echo "File: $$f"; diff {,${INSTALL_DIR}/}$$f; done
 
-### make copy-to-source: Copy the target files back to source. 
-###     Useful when testing new setting with target files directly.
+### make copy-to-source: Copy the target files back to source.
+###	 Useful when testing new setting with target files directly.
 copy-to-source:
 	for f in ${FILES}; do cp --update --preserve=timestamps -v ${INSTALL_DIR}/$$f $$f; done
 

@@ -13,14 +13,9 @@ for p in "${MY_PATH[@]}";do
 done
 unset MY_PATH
 
-
-## Erase the duplicate lines in the history
-export HISTCONTROL=erasedups
-
-
 msc_apply export /etc/my-sys-cfg/env_value
 if msc_is_interactive_mode ;then
-    msc_apply alias /etc/my-sys-cfg/alias_value
+    [ -r /etc/my-sys-cfg/alias_value ] && msc_apply alias /etc/my-sys-cfg/alias_value
     ## Set up prompt
     if [ ! "${ZSH_NAME:-}" = "zsh" ];then
         ## Set bash prompt
