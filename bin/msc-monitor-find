@@ -20,7 +20,7 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###
 ###         msc-monitor-find -D Manufacturer
 ###
-###     To find the connector that associated with monitor whose 
+###     To find the connector that associated with monitor whose
 ###      manufacturer that start with AX:
 ###
 ###         msc-monitor-find -V 'Manufacturer=AX*' -o
@@ -54,20 +54,23 @@ extract_drm_edid() {
 }
 
 ## Note: xrandr does not work without X
+extract_xrandr_active_monitors() {
+    xrandr --listactivemonitors | sed -rne '/[0-9]+:/ s/.*\s+([a-zA-Z0-9-]*)$/\1/p'
+}
+
 extract_xrandr_edid() {
     local xrandrProp=$(xrandr --prop 2>/dev/null)
     if [ -z "$xrandrProp" ]; then
         return $MSC_EXIT_RETURN_FALSE
     fi
-    local buf=$(xrandr --prop | msc_extract_section "^[A-Za-z0-9-]+ connected")
-    local outputs=$(sed -rne "/^[A-Za-z0-9-]+ / s/^([A-Za-z0-9-]+).*$/\1/p" <<<"$buf")
+    local outputs=$(extract_xrandr_active_monitors)
     if [ -z "$outputs" ]; then
         exit $MSC_EXIT_RETURN_FALSE
     fi
 
     local edidLine
     for out in $outputs; do
-        edidLine=$(msc_extract_section "^$out " <<<"$buf" |
+        edidLine=$(msc_extract_section "^$out " <<<"$xrandrProp" |
             msc_extract_section -c "/^[[:blank:]]*[0-9a-f]+/" "^[[:blank:]]*EDID:" |
             sed -rne '/^[[:blank:]]*[0-9a-f]+/p' |
             tr -d '[:space:]')
@@ -162,17 +165,17 @@ shift $((OPTIND - 1))
 extract_drm_edid
 
 case $XDG_SESSION_TYPE in
-    x11)
-        extract_xrandr_edid
-        XRandrEnabled=1
-        ;;
-    wayland)
-        XRandrEnabled=0
-        ;;
-    *)
-        ## Not in X, or unknown
-        XrandrEnabled=0
-        ;;
+x11)
+    extract_xrandr_edid
+    XRandrEnabled=1
+    ;;
+wayland)
+    XRandrEnabled=0
+    ;;
+*)
+    ## Not in X, or unknown
+    XrandrEnabled=0
+    ;;
 esac
 
 ResultCount=0
