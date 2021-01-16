@@ -1,4 +1,4 @@
-## bash and zsh shared starup script
+# bash and zsh shared starup script
 ##
 ## For RHEL and Fedora, the scripts in /etc/profile.d will be called by:
 ##   bash or zsh: login shell and interactive non-login shell
@@ -7,7 +7,7 @@
 export MSC_LIBEXEC_DIR
 source $MSC_LIBEXEC_DIR/functions.sh
 
-MY_PATH=(/rescue /sbin /usr/sbin /usr/local/bin /usr/local/sbin /usr/libexec/git-core $HOME/bin)
+MY_PATH=(/rescue /sbin /usr/sbin /usr/local/bin /usr/local/sbin /usr/libexec/git-core $HOME/bin $HOME/.local/bin)
 for p in "${MY_PATH[@]}";do
     msc_pathmunge "$p" after
 done
