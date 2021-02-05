@@ -54,7 +54,7 @@ msc_log() {
     fi
 
     ## Omit the lower priority
-    if [ ${MSC_LOG_LEVEL_DICT[$logLevel]} -lt ${MSC_LOG_LEVEL_DICT[$MSC_LOG_LEVEL]} ]; then
+    if [ ${MSC_LOG_LEVEL_DICT['$logLevel']} -lt ${MSC_LOG_LEVEL_DICT['$MSC_LOG_LEVEL']} ]; then
         return
     fi
 
@@ -276,9 +276,14 @@ msc_run_and_log() {
 }
 
 ###
-### msc_run_if_not_already [-u users] [-n processName] command [args...]
+### msc_run_if_not_already [Options] [ command args...]
 ###   Run the command if it is not already be run
 ###   Options
+###     -a <sshArg>: SSH Arguments
+###       Specify the arguments required to run SSH
+###       e.g.  -X hostname DISPLAY=:0
+###     -c <command>: Specify command
+###       Use this option when command is not the first none option argument.
 ###     -u <users>: Only matches the specified users.
 ###       Either UID or username works.
 ###     -n <processName>: processName is what shown in pgrep -l
@@ -286,29 +291,48 @@ msc_run_and_log() {
 ###       For example, google-chrome's process name is chrome
 msc_run_if_not_already() {
     local processName
-    local users
-    local opts=""
-    if [ "$1" = "-u" ]; then
-        opts+="-u $2"
-        shift 2
-    fi
-    # processName can only contains up 15 characters
-    if [ "$1" = "-n" ]; then
-        #
-        processName="${2:0:15}"
-        shift 2
-    else
-        processName="${1:0:15}"
+    local cmd
+    local sshCmd
+    local sshDebugMsg=""
+    local pgrepOptArray=()
+    local opt
+
+    while getopts "a:c:n:u:" opt; do
+        case $opt in
+        a)
+            sshCmd="ssh $OPTARG"
+            sshDebugMsg=" with SSH arg $OPTARG"
+            ;;
+        c)
+            cmd="$OPTARG"
+            ;;
+        n)
+            processName="${2:0:15}"
+            ;;
+        u)
+            user="$OPTARG"
+            pgrepOptArray+=(-u "$2")
+            ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    if [ -z "$cmd" ]; then
+        cmd="$1"
     fi
 
-    if ! pgrep $opts -lx $processName &>/dev/null; then
-        if which "$1" >&/dev/null; then
-            $@ &
-        else
-            msc_log "run_if_not_already: $1 not found, skip" warning
-        fi
-        msc_log "run_if_not_already run $processName: $*"
+    if [ -z "$processName" ]; then
+        processName="${cmd:0:15}"
+    fi
+
+    if eval "$sshCmd pgrep ${pgrepOptArray[@]} -lx $processName" &>/dev/null; then
+        msc_log "already run $processName$sshDebugMsg" notice
     else
-        msc_log "already run $processName" warning
+        if eval "$sshCmd which $cmd" >&/dev/null; then
+            msc_log "run_if_not_already run $processName: ${sshCmd[*]} $*" info
+            eval "$sshCmd $@" &
+        else
+            msc_log "run_if_not_already: skip the missing command $cmd$sshDebugMsg" warning
+        fi
     fi
 }
