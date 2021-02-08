@@ -29,8 +29,7 @@ case ":$PATH:" in
     ;;
 esac
 
-## source consts, so we can use them later in this program
-source $MSC_LIBEXEC_DIR/const.sh
+## source functions, so we can use them later in this program
 source $MSC_LIBEXEC_DIR/functions.sh
 
 if [ $Installed -eq 1 ]; then
@@ -64,6 +63,5 @@ for v in MSC_BIN_DIR MSC_LIBEXEC_DIR MSC_ETC_MSC_DIR; do
 done
 
 if [ $SourceFunctionsShPrint -eq 1 ]; then
-    echo "source $MSC_LIBEXEC_DIR/const.sh"
     echo "source $MSC_LIBEXEC_DIR/functions.sh"
 fi

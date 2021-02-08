@@ -1,6 +1,6 @@
 ### Usage: source const.sh
 ###     Definition of constants
-MSC_VERSION=0.7.1
+MSC_VERSION=0.8.0
 
 : ${MSC_ETC_MSC_DIR:=/etc/my-sys-cfg}
 export MSC_ETC_MSC_DIR

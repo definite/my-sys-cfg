@@ -30,6 +30,21 @@ MscLogWorstStatusCode=$MSC_EXIT_OK
 MscExitMsg=
 
 ###
+### msc_array_get_value <array> <index>
+###     Return value of an array
+###     This function address the difference between
+###     how bash and zsh handles associative array
+msc_array_get_value() {
+    if [ -n "${ZSH_NAME-}" ]; then
+        ## Use Parameter Expension P flag from ZSH
+        echo ${${(P)1}[$2]}
+    else
+        ## Need quote for associative array in bash
+        eval 'echo ${'$1"['"$2"']}"
+    fi
+}
+
+###
 ### msc_log <msg> [logLevel [logger options...]]
 ###   Log messages with given level
 ###
@@ -54,7 +69,7 @@ msc_log() {
     fi
 
     ## Omit the lower priority
-    if [ ${MSC_LOG_LEVEL_DICT['$logLevel']} -lt ${MSC_LOG_LEVEL_DICT['$MSC_LOG_LEVEL']} ]; then
+    if [ $(msc_array_get_value MSC_LOG_LEVEL_DICT $logLevel) -lt $(msc_array_get_value MSC_LOG_LEVEL_DICT $MSC_LOG_LEVEL) ]; then
         return
     fi
 
