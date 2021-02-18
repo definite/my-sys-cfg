@@ -311,6 +311,7 @@ msc_run_if_not_already() {
     local sshDebugMsg=""
     local pgrepOptArray=()
     local opt
+    local OPTIND
 
     while getopts "a:c:n:u:" opt; do
         case $opt in
