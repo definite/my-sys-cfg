@@ -60,6 +60,10 @@ while read -r line; do
     if [ "${tokens[0]}" = "$OutputProfile" ]; then
         MonitorFindOpts=$(msc_quotes_strip "${tokens[1]}")
         XrandrOutput=$(${MSC_BIN_DIR}/msc-monitor-find -o $MonitorFindOpts)
+        if [[ -z $XrandrOutput ]]; then
+            msc_log "MonitorFindOpts $MonitorFindOpts find nothing" debug
+            continue
+        fi
         XrandrOpts=$(msc_quotes_strip "${tokens[2]}")
         msc_log "Matched outuput: $XrandrOutput $XrandrOpts" info
         #xrandr --output $XrandrOutput --off
