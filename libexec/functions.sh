@@ -125,8 +125,14 @@ msc_exit_status_to_log_level() {
 ###   Insert "trap msc_exit_print_error EXIT" to activate the function
 msc_exit_print_error() {
     local exitStatus=${?:-$MscLogWorstStatusCode}
+    local combinedMsg
     if [ -n "${MscExitMessageDict[$exitStatus]}" ]; then
-        msc_log "$MscExitMsg" $(msc_exit_status_to_log_level $exitStatus)
+        combinedMsg="${MscExitMessageDict[$exitStatus]}"
+        if [ "x$MscExitMsg" = "x" ]; then
+            msc_log "$combinedMsg." $(msc_exit_status_to_log_level $exitStatus)
+        else
+            msc_log "$combinedMsg: $MscExitMsg" $(msc_exit_status_to_log_level $exitStatus)
+        fi
     else
         msc_log "Undefined Exit Code $exitStatus Error: $MscExitMsg" alert
     fi
