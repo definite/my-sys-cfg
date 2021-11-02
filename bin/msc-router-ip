@@ -1,10 +1,8 @@
 #!/bin/sh
 #set -eu
-RoutersLines=$(netstat -rn | /bin/egrep '^0.0.0.0 .* 0.0.0.0')
-WiredRouter=$(awk '$8 ~ /^e/ {print $2}' <<<$RoutersLines)
-if [ -n "$WiredRouter" ]; then
-    echo $WiredRouter; exit 0
-fi
 
-awk '$8 ~ /^wl/ {print $2}' <<<$RoutersLines
+RoutersLines=$(ip r | sed -rne '/^default/ s/^.* via ([^ ]+) dev ([^ ]+) .*$/\2 \1/p')
 
+## Heurstic Logic: sort the interface alphbatically,
+## wireless NIC will be the last
+sort <<<"$RoutersLines" | head -n 1 | sed -e "s/^[^ ]* //"

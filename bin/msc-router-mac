@@ -1,9 +1,16 @@
 #/bin/sh
 set -eu
-ScriptDir=$(dirname $(realpath ${BASH_SOURCE[0]}))
-RouterIp=$($ScriptDir/msc-router-ip)
+
+MSC_LOG_PREFIX="[$(basename ${BASH_SOURCE[0]})]"
+trap msc_exit_print_error EXIT
+
+## Setup my-cfg-sys environment
+eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+
+RouterIp=$($MSC_BIN_DIR/msc-router-ip)
 if [ -z "${RouterIp}" ]; then
-    echo "NOT_CONNECTED"
-    exit 1
+
+    MscExitMsg="No dev found that connect to router."
+    exit $MSC_EXIT_CRIT_DEVICE_MISSING
 fi
 ip neighbor show to ${RouterIp} | awk '{print $5}' | sed -e 'y/ABCDEF/abcdef/'
