@@ -313,7 +313,8 @@ msc_run_and_log() {
 msc_run_if_not_already() {
     local processName
     local cmd
-    local sshCmd
+    local baseCmd
+    local sshCmd=""
     local sshDebugMsg=""
     local pgrepOptArray=()
     local opt
@@ -339,18 +340,16 @@ msc_run_if_not_already() {
     done
     shift $((OPTIND - 1))
 
-    if [ -z "$cmd" ]; then
-        cmd="$1"
-    fi
+    : ${cmd:=$1}
+    baseCmd=$(basename $cmd)
 
-    if [ -z "$processName" ]; then
-        processName="${cmd:0:15}"
-    fi
+    ## pgrep truncate the baseCmd to first 15 characters
+    : ${processName:=${baseCmd:0:15}}
 
-    if eval "$sshCmd pgrep ${pgrepOptArray[@]} -lx $processName" &>/dev/null; then
+    if eval "${sshCmd} pgrep ${pgrepOptArray[@]} -lx $processName" &>/dev/null; then
         msc_log "already run $processName$sshDebugMsg" notice
     else
-        if eval "$sshCmd which $cmd" >&/dev/null; then
+        if eval "${sshCmd} which $cmd" >&/dev/null; then
             msc_log "run_if_not_already run $processName: ${sshCmd[*]} $*" info
             eval "$sshCmd $@" &
         else
