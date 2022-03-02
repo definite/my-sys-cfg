@@ -1,6 +1,6 @@
 ### Usage: source const.sh
 ###     Definition of constants
-MSC_VERSION=0.8.0
+MSC_VERSION=0.8.5
 
 : ${MSC_ETC_MSC_DIR:=/etc/my-sys-cfg}
 export MSC_ETC_MSC_DIR
@@ -11,9 +11,8 @@ fi
 
 declare -A MscExitMessageDict
 
-### Exit Statuses
-###
-###    MSC_EXIT_OK(0)
+### Exit Status
+###     MSC_EXIT_OK(0)
 ###        Run successfully
 export MSC_EXIT_OK=0
 MscExitMessageDict[$MSC_EXIT_OK]="Done"
@@ -67,42 +66,43 @@ MscExitMessageDict[$MSC_EXIT_CRIT]="Generic Critical"
 export MscExitMessageDict
 
 ###
-### MSC_LOG_LEVEL_DICT
-###     Define log levels
-###     It is based on loglevel from syslog(3)
+### Environment
+###     MSC_LOG_LEVEL_DICT
+###         Define log levels
+###         It is based on loglevel from syslog(3)
 declare -A MSC_LOG_LEVEL_DICT
 ###
-###     pending:
-###         Initial level of outcome.
+###         pending:
+###             Initial level of outcome.
 MSC_LOG_LEVEL_DICT['pending']=0
 ###
-###     debug1:
-###         A little bit more verbose debug messages
+###         debug1:
+###             A little bit more verbose debug messages
 MSC_LOG_LEVEL_DICT['debug1']=5
 ###
-###     debug:
-###         Only useful when debugging
+###         debug:
+###             Only useful when debugging
 MSC_LOG_LEVEL_DICT['debug']=6
 ###
-###     info:
-###         User may be interested.
+###         info:
+###             User may be interested.
 MSC_LOG_LEVEL_DICT['info']=7
 ###
-###     notice:
-###         User needs to see.
+###         notice:
+###             User needs to see.
 MSC_LOG_LEVEL_DICT['notice']=10
 ###
-###     warning:
-###         The program may still return OK, but user need to be warned.
+###         warning:
+###             The program may still return OK, but user need to be warned.
 MSC_LOG_LEVEL_DICT['warning']=$MSC_EXIT_WARNING
 ###
-###     err:
-###         Error that is not severe to stop the program.
-###         From this level, error messages need to be shown.
+###         err:
+###             Error that is not severe to stop the program.
+###             From this level, error messages need to be shown.
 MSC_LOG_LEVEL_DICT['err']=$MSC_EXIT_ERR
 ###
-###     crit:
-###         The program should stop and return error immediately.
+###         crit:
+###             The program should stop and return error immediately.
 MSC_LOG_LEVEL_DICT['crit']=$MSC_EXIT_CRIT
 MSC_LOG_LEVEL_DICT['alert']=$((MSC_EXIT_CRIT + 1))
 MSC_LOG_LEVEL_DICT['emerg']=$((MSC_EXIT_CRIT + 2))
