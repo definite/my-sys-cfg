@@ -185,13 +185,6 @@ msc_apply() {
 }
 
 ###
-### msc_help_print <cmd>
-###     Print in-line help of a program
-msc_help_print() {
-    sed -rne '/^[[:space:]]*###/ s/^[[:space:]]*###( )?//p' "$1"
-}
-
-###
 ### msc_extract_section [-c contentPattern] [-e secEndRule] <secStartPattern>
 ###     Extract sections from stdin. If the secStartPattern occurs multiple
 ###     times, the contents are appended.
@@ -237,12 +230,33 @@ msc_extract_section() {
     done
     shift $((OPTIND - 1))
     secStartPattern="$1"
-    secEndRule='!('"$contentRule"') && !/'"$secStartPattern"'/'
-
-    awk -v 'start=0' 'start==1 && ('"$secEndRule"') {start=0}\
-        start==1 && '"$contentRule"' {print}\
-        /'"$secStartPattern"'/ {print; start=1}'
+    if [[ -z "${secEndRules:-}" ]]; then
+        secEndRule='(/^[[:graph:]]/ && !/'"$secStartPattern"'/)'
+    fi
+    awk -v start=0 \
+        '/'"$secStartPattern"'/ {start=1}\
+        start==1 && ('"$secEndRule"') {start=0}\
+        start==1 {print}'
 }
+
+###
+### msc_help_print <cmd>
+###     Print in-line help of a program
+msc_help_print() {
+    local cmd="$1"
+    msc_help_print_simple "$cmd"
+    msc_help_print_simple $MSC_LIBEXEC_DIR/const.sh | msc_extract_section "Exit Status"
+}
+
+###
+### msc_help_print_simple <cmd>
+###     Print the in-line help of a program itself
+###     It does not print my-sys-cfg Exit Status
+msc_help_print_simple() {
+    local cmd="$1"
+    sed -rne '/^[[:space:]]*###/ s/^[[:space:]]*###( )?//p' "$cmd"
+}
+
 
 ###
 ### msc_str_contains_substr <str> <substr>
