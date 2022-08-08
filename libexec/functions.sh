@@ -179,8 +179,9 @@ msc_apply() {
     local file=$2
     ## Remove the lines with leading '#' and empty lines
     ## Then eval the: <cmd> <key1>=<value1>; <cmd> <key2>=<value2>...
-
-    eval $(msc_file_list_effective "$file" | sed -e "s/\([^=]*\)=/${cmd} \1=/" | tr "\n" ";")
+    while IFS= read -r line; do
+        eval "$cmd $line"
+    done < <( msc_file_list_effective "$file")
 }
 
 ###

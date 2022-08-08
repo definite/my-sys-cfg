@@ -1,12 +1,12 @@
 # Feature rule file
 #
-# Each line represents a rule, the  
+# Each line represents a rule, the
 # There are 3 columns
-# 1. Feature: The name to be given when the rule match  
+# 1. Feature: The name to be given when the rule match
 #    Matched features will concatenate according to the sequence list here
 #    and separated by '+'
 #
-#    For example, if Lenovo_ThinkPad_Dock and Targus_Dock 
+#    For example, if Lenovo_ThinkPad_Dock and Targus_Dock
 #    both matched, the profile will have following feature list
 #    +Lenovo_ThinkPad_Dock+Targus_Dock
 #
@@ -21,4 +21,4 @@ Lenovo_ThinkPad_Dock	USB	17ef:1010
 Targus_Dock	USB	17e9:4306
 ThinkPad_Mini_Dock_Plus_Series_3	USB	17ef:100a
 ThinkPad_USB_C_Dock_Audio	USB	17ef:3063
-
+Lenovo_ThinkPad_Thunderbolt_4_Dock_MCU_Controller	USB	17ef:30b4
