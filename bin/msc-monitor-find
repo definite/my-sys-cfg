@@ -7,13 +7,13 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###     msc-monitor-find [options] -D [Descriptor]
 ###
 ### DESCRIPTION
-###     This program find EDID descriptor of active monitors looking from:
+###     This program finds EDID descriptor of active monitors looking from:
 ###
 ###         Non-empty edid file within /sys/class/drm/ or xrandr
 ###
 ### REQUIREMENTS
-###     edid-decode needs to be installed.
-###     For RHEL and Fedora, edid-decode is provided by xorg-x11-utils
+###     monitor-edid needs to be installed.
+###     For RHEL and Fedora, monitor-edid is provided by xorg-x11-utils
 ###
 ### EXAMPLES
 ###     To list the Manufacturer of each monitor, run:
@@ -38,6 +38,7 @@ eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 ##== Functions
 declare -A EdidDrmMap
 declare -A EdidXrandrMap
+declare -A EdidXrandrPropMap
 declare -A EdidDescriptorMap
 
 BytePerLine=16
@@ -59,8 +60,8 @@ extract_xrandr_active_monitors() {
 }
 
 extract_xrandr_edid() {
-  local xrandrProp=$(xrandr --prop 2>/dev/null)
-  if [ -z "$xrandrProp" ]; then
+  local xrandrPropAll=$(xrandr --prop 2>/dev/null)
+  if [ -z "$xrandrPropAll" ]; then
     return $MSC_EXIT_RETURN_FALSE
   fi
   local outputs=$(extract_xrandr_active_monitors)
@@ -68,19 +69,20 @@ extract_xrandr_edid() {
     exit $MSC_EXIT_RETURN_FALSE
   fi
 
+  local xrandrProp
   local edidLine
   for out in $outputs; do
-    edidLine=$(msc_extract_section "^$out " <<<"$xrandrProp" |
-    msc_extract_section -c "/^[[:blank:]]*[0-9a-f]+/" "^[[:blank:]]*EDID:" |
+    xrandrProp=$(msc_extract_section "^$out " <<<"$xrandrPropAll" | tail -n +2)
+    edidLine=$(msc_extract_section -1 -c "^[[:blank:]]*[0-9a-f]+" "^[[:blank:]]*EDID:" <<<"$xrandrProp"|
       sed -rne '/^[[:blank:]]*[0-9a-f]+/p' |
       tr -d '[:space:]')
     EdidXrandrMap["$edidLine"]=$out
+    EdidXrandrPropMap["$edidLine"]="$xrandrProp"
   done
 }
 
 decode_edid() {
-  ## edid-decode always return 1
-  xxd -r -p <<<"$1" | monitor-parse-edid || true
+  xxd -r -p <<<"$1" | monitor-parse-edid
 }
 
 ## extract_edid_descriptor <descriptor> "decoded txt"
@@ -118,6 +120,7 @@ FilterConnector=
 FilterDescriptor=
 FilterDescriptorValuePattern=
 FilterOutput=
+SessionType=
 FilterXpts=0
 FilterYpts=0
 ###
@@ -179,14 +182,14 @@ extract_drm_edid
 case $XDG_SESSION_TYPE in
   x11)
     extract_xrandr_edid
-    XRandrEnabled=1
+    SessionType=x11
     ;;
   wayland)
-    XRandrEnabled=0
+    SessionType=wayland
     ;;
   *)
-    ## Not in X, or unknown
-    XrandrEnabled=0
+    ## Not in GUI, or unknown
+    SessionType=ignore
     ;;
 esac
 
@@ -194,12 +197,12 @@ ResultCount=0
 
 for edidLine in "${!EdidDrmMap[@]}"; do
   ## Filter out the irrevelent results
-  connector=${EdidDrmMap[$edidLine]}
+  connector="${EdidDrmMap[$edidLine]}"
   if [ -n "$FilterConnector" -a "$FilterConnector" != $connector ]; then
     continue
   fi
 
-  if [ $XRandrEnabled -eq 1 ]; then
+  if [ $SessionType = x11 ]; then
     output=${EdidXrandrMap[$edidLine]}
     if [ -n "$FilterOutput" -a "$FilterOutput" != "$output" ]; then
       continue
@@ -237,10 +240,10 @@ for edidLine in "${!EdidDrmMap[@]}"; do
       ;;
 
     ${MODE[XRANDR_OUTPUT]})
-      if [ $XRandrEnabled -eq 1 ]; then
+      if [ $SessionType = x11 ]; then
         echo $output
       else
-        msc_fail "Failed to query XRandr, perhaps not in X" $MSC_EXIT_CRIT
+        msc_fail "Section Type $SessionType does not support XRandr" $MSC_EXIT_CRIT
       fi
       ;;
 
@@ -252,6 +255,7 @@ for edidLine in "${!EdidDrmMap[@]}"; do
     *)
       print_section_header
       echo "$edidTxt"
+      echo "${EdidXrandrPropMap[$edidLine]}"
       ;;
 
     esac
