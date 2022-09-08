@@ -4,13 +4,16 @@
 export MSC_LIBEXEC_DIR
 
 source $MSC_LIBEXEC_DIR/const.sh
+if [ -r $MSC_ETC_MSC_DIR/local.sh ]; then
+    source $MSC_ETC_MSC_DIR/local.sh
+fi
 
 : ${MSC_LOG_FACILITY:=user}
 : ${MSC_LOG_LEVEL:=notice}
 : ${MSC_LOG_PREFIX:=}
 
 ###
-### MSG_LOG_OPTIONS
+### MSC_LOG_OPTIONS
 ###   Options for logger. Default is '-s', i.e. also print error message to
 ###   stderr.
 ###   Default: -s
@@ -166,7 +169,8 @@ msc_fail() {
 ###    Prints lines whose first non-whitespace character is not '#'
 ###    In other words, this function skip empty, whitespace, or commented line
 msc_file_list_effective() {
-  sed -ne '/^[[:space:]]*[^#]/p'
+  local file="${1:=/dev/stdin}"
+  sed -ne '/^[[:space:]]*[^#]/p' "$file"
 }
 
 ###
@@ -236,25 +240,11 @@ msc_count_min_leading_space() {
 msc_extract_section() (
   local OPTIND
   local secStartPattern
-  local contentPattern='^[[:blank:]]+[[:graph:]]'
+  local contentPattern='^[[:blank:]]+[[:graph:]]*'
   local secEndPattern
 
   local onlyFirst=0
   local prevState=0  # 0: None, 1: Start, 2: Content, 3: End
-  local newState=0
-  local minSpace=-1
-
-  line_get_new_state(){
-    if egrep "$secStartPattern" <<<"$line" >& /dev/null ; then
-      newState=1
-    elif egrep "$contentPattern" <<<"$line" >& /dev/null ; then
-      newState=2
-    elif egrep "${secEndPattern:-}" <<<"$line" >& /dev/null ; then
-      newState=3
-    else
-      newState=0
-    fi
-  }
 
   while getopts "1c:e:" opt; do
     case $opt in
@@ -270,51 +260,62 @@ msc_extract_section() (
     esac
   done
   shift $((OPTIND - 1))
+
+  if [[ $# -lt 1 ]]; then
+    msc_fail "msc_extract_section: Require secStartPattern" $MSC_EXIT_CRIT_ARGUMENTS_INVALID
+  fi
   secStartPattern="$1"
 
-  while IFS= read -r line; do
-    line_get_new_state
-    ### Whether to change state
-    case $newState in
-      0 )
-        if [[ $prevState -eq 1 || $prevState -eq 2 ]]; then
-          ### No match treated as End
-          newState=3
-          if [[ $onlyFirst  -eq 1 ]]; then
-            return
-          fi
-        fi
-        ;;
+  local rules=''
 
-      1 )
-        case $prevState in
-          0 | 3)
-            echo "$line"
-            ;;
-          * )
-            ## Duplicate header, skip
-            ;;
-        esac
-        ;;
+  if [[ -n ${secEndPattern:-} ]]; then
+    rules='## End
+    /'$secEndPattern'/ {
+      if (prevState>0) {
+        if (onlyFirst==1) {
+          exit
+        } 
+        prevState=0
+      }
+      next
+    }
+    '
+  fi
+  
 
-      2 )
-        if [[ $prevState -eq 1 || $prevState -eq 2 ]]; then
-          # Only print content if prev line is either header or content
-          echo "$line"
-        else
-          # Keep the prevState if prev line is neither header nor content
-          newState=$prevState
-        fi
-        ;;
+  rules+='## Start
+    /'$secStartPattern'/ {
+      if (prevState>0) {
+        if (onlyFirst==1) {
+          exit
+        } 
+      }
+      else {
+        print; prevState=1; 
+      }
+      next 
+    }
 
-      3 )
-          if [[ $onlyFirst  -eq 1 ]]; then
-            return
-          fi
-        ;;
-    esac
-    prevState=$newState  
-  done
+    ## content
+    /'$contentPattern'/ {
+      if (prevState>0) {
+        print; prevState=2;
+      }
+      next
+    }
+  
+    ## default (does not match any)
+    /.*/ {
+      if (prevState>0) {
+        if (onlyFirst==1){
+          exit
+        } else{
+          prevState=0; next
+        }
+      }
+    }'
+
+  awk -v 'prevState=0' -v "onlyFirst=$onlyFirst" "$rules"
 )
 
 ###

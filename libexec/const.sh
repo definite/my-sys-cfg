@@ -1,13 +1,9 @@
 ### Usage: source const.sh
 ###     Definition of constants
-MSC_VERSION=0.8.5
+MSC_VERSION=0.10.1
 
 : ${MSC_ETC_MSC_DIR:=/etc/my-sys-cfg}
 export MSC_ETC_MSC_DIR
-
-if [ -r $MSC_ETC_MSC_DIR/local.sh ]; then
-    source $MSC_ETC_MSC_DIR/local.sh
-fi
 
 declare -A MscExitMessageDict
 

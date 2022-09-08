@@ -14,7 +14,7 @@ the changing XRandr output name after undocking and docking.
 _Note that before version 1.0, the format of configuration file might change_
 
 ## Dependencies
- - monitor-edid ( provided by `monitor-edid`)
+ - monitor-edid ( provided by `monitor-edid` in Fedora)
  - (Optional) xrandr
 
 ## Usages

@@ -20,11 +20,11 @@ Installed=0
 MSC_BIN_DIR=$(dirname $(realpath ${BASH_SOURCE[0]}))
 ## if MSC_BIN_DIR in PATH, then my-sys-cfg bin is installed
 case ":$PATH:" in
-*:${MSC_BIN_DIR}:*)
+  *:${MSC_BIN_DIR}:*)
     MSC_LIBEXEC_DIR=/usr/libexec/my-sys-cfg
     Installed=1
     ;;
-*)
+  *)
     MSC_LIBEXEC_DIR=$(realpath ${MSC_BIN_DIR}/../libexec)
     ;;
 esac
@@ -33,35 +33,35 @@ esac
 source $MSC_LIBEXEC_DIR/functions.sh
 
 if [ $Installed -eq 1 ]; then
-    MSC_ETC_MSC_DIR=/etc/my-sys-cfg
+  MSC_ETC_MSC_DIR=/etc/my-sys-cfg
 else
-    MSC_ETC_MSC_DIR=$(realpath ${MSC_BIN_DIR}/../etc/my-sys-cfg)
+  MSC_ETC_MSC_DIR=$(realpath ${MSC_BIN_DIR}/../etc/my-sys-cfg)
 fi
 ##== Parse Start ==
 SourceFunctionsShPrint=0
 ###
 ### OPTIONS
 while getopts "hf" opt; do
-    case $opt in
+  case $opt in
     h)
-        ###     -h: Show this help
-        msc_help_print $0
-        exit $MSC_EXIT_OK
-        ;;
+      ###     -h: Show this help
+      msc_help_print $0
+      exit $MSC_EXIT_OK
+      ;;
     f)
-        ###
-        ###     -f: Print "source <path/to/functions.sh>"
-        ###         So calling script can just use "eval $(msc-env-find -f)"
-        SourceFunctionsShPrint=1
-        ;;
-    esac
+      ###
+      ###     -f: Print "source <path/to/functions.sh>"
+      ###         So calling script can just use "eval $(msc-env-find -f)"
+      SourceFunctionsShPrint=1
+      ;;
+  esac
 done
 shift $((OPTIND - 1))
 
 for v in MSC_BIN_DIR MSC_LIBEXEC_DIR MSC_ETC_MSC_DIR; do
-    echo "export $v=$(eval echo \$$v)"
+  echo "export $v=$(eval echo \$$v)"
 done
 
 if [ $SourceFunctionsShPrint -eq 1 ]; then
-    echo "source $MSC_LIBEXEC_DIR/functions.sh"
+  echo "source $MSC_LIBEXEC_DIR/functions.sh"
 fi
