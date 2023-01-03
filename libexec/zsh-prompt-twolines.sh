@@ -1,3 +1,8 @@
+### Twolines prompt for bash that support VCS
+### Usage: source from bash-internal.sh
+###
+### ENVIRONMENTS
+###
 autoload -Uz vcs_info
 zstyle ':vcs_info:*' actionformats '(%s %r/%S)-[%b|%a]%m%u%c-'
 zstyle ':vcs_info:*' formats '(%s %r/%S)-[%b]%m%u%c-'

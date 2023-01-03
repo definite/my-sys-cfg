@@ -1,0 +1,49 @@
+# RELEASE-NOTES
+:toc:
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 3
+:showtitle:
+
+## v1.0.0
+First stable release. It is a big jump from pre 1.0 version.
+Thus it is not compatible with pre 1.0 version. 
+
+Below only list notable changes
+
+### New 
+#### Scripts
+
+- msc-condition-find
+- msc-host-setup
+
+#### Functionality
+
+- Conditions
+- Rules
+
+### Fixed
+
+- Issue 
+https://github.com/definite/my-sys-cfg/issues/9[9]: Support for Conditions
+
+### Changed
+
+#### msc-prof-get 
+
+It is now deprecated. The prof string it generates now became:
+
+----
++<hostname>+<met-condition1>+<met-condition2>...+
+----
+
+For conditions that produce multiple lines, the met-condition become:
+
+----
+line1+line2..
+----
+
+### Removed
+
+- Feature functionality. Superseded with conditions
+  

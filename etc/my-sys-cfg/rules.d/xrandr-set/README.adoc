@@ -1,0 +1,17 @@
+# xrandr-set rules 
+
+Rules uses by msc-xrandr-set.
+
+Should a rule applied, it should output something like
+
+----
+[output1]\t[XRandrOption1 [XRandrOption2]]
+----
+
+For example:
+----
+HDMI-1\t--auto --rotate normal --pos 0x0 --primary
+eDP-1\t--auto --rotate normal --right-of HDMI-1"
+----
+
+Note that all files with extension .rule will be evaluated.

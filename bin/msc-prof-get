@@ -8,9 +8,10 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###
 ### DESCRIPTION
 ###     Echo the profile of current system.
-###     Profile is a combination of user defined system attributes.
-###     like host name, docking status, names of connected networks and so on.
-###     The attribute is defined in /etc/msc/profiles.tsv (tab separated patterns)
+###     Profile is a combination hostname and conditions.
+###      
+###     Note: this program is deprecated, and only for compability reason.
+###     Use conditions instead.
 ###
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dchen@redhat.com
@@ -87,12 +88,23 @@ match() {
 }
 
 ##== Main Start ==
-Result='+'
+Result="+$(hostname -s)+"
+Count=0
 
-for feature_file in $MSC_ETC_MSC_DIR/features.d/*; do
-    while read -r line; do
-        IFS=$'\t' read -r -a tokens <<<"$line"
-        match "${tokens[@]}"
-    done < <(msc_file_list_effective "$feature_file")
+for c in $MSC_ETC_MSC_DIR/conditions.d/*.cond; do
+  Out=$(source "$c")
+  [ $? -ne 0 ] && continue
+  [ "x$Out" = "x" ] && continue
+
+  ## For multi-lines, show all 
+  ##   Example:
+  ##     one
+  ##     two  
+  ##     
+  ##  Results: +one+two+
+  IFS=$'\t' read -r -a tokens <<<"$Out"
+  for t in "${tokens[@]}"; do
+    Result+="$t+"
+  done
 done
 echo $Result

@@ -1,0 +1,8 @@
+### This script outputs XRandr output of external monitors
+ExternalOutputs=$(${MSC_BIN_DIR}/msc-monitor-find -to)
+
+if [ -z "$ExternalOutputs" ]; then
+  return 1
+fi
+echo "$ExternalOutputs"
+return 0

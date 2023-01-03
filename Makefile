@@ -1,4 +1,4 @@
-include common.mk
+include libexec/common.mk
 
 SUB_DIRS = bin etc libexec
 .phony: help $(COMMON_TARGETS) $(SUB_DIRS)

@@ -1,0 +1,109 @@
+#!/bin/bash
+set -eu # Exit when returns non-zero, Error when variable is unset.
+### NAME
+###     msc-host-setup - Setup hos
+###
+### SYNOPSIS
+###     msc-host-setup [options] [hostname]
+###
+### DESCRIPTION
+###     Setup host according to host-setup directory.
+###     
+###     It invokes host-setup file under $MSC_HOST_SETUP_DIR/common,
+###     Then invokes scripts under $MSC_HOST_SETUP_DIR/hosts.d/$hostname
+###       
+### ENVIRONMENTS
+###     MSC_HOST_SETUP_DIR
+###         Location of MSC host-setup directory. 
+###         Setup 
+###         Default: /etc/my-sys-cfg/host-setup
+: ${MSC_HOST_SETUP_DIR:=/etc/my-sys-cfg/host-setup}
+###
+### ARGUMENTS
+###     hostname: Name of the host.
+###  
+### AUTHOR
+###     Ding-Yi Chen (definite), dingyichen@gmail.com
+###     Created in 2023-01-13 17:33:17
+###
+MSC_LOG_PREFIX="[msc-host-setup] "
+
+## Setup my-cfg-sys environment
+eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+
+##== Function Start ==
+get_mode(){
+  local dir="$1"
+  if [ ! -r $dir ]; then
+    echo ""  # Not exist, just skip 
+  elif [ -r "$dir/msc-setup.sh" ]; then
+    echo "sh"
+  elif [ -r "$dir/Makefile" ]; then
+    echo "make"
+  else 
+    echo "cp"
+  fi
+}
+
+
+##== Parse Start ===
+###
+### OPTIONS
+MSC_LOG_LEVEL=info
+Mode=
+Sudo=
+Hostname=$(hostname -s)
+while getopts 'hsv:' opt; do
+  case $opt in
+    h)
+      ###     -h: Print usage
+      msc_help_print $0
+      exit $MSC_EXIT_OK
+      ;;
+    s)
+      ###
+      ###     -s: Sudo mode
+      Sudo=/usr/bin/sudo
+      ;;       
+    v)
+      ###
+      ###     -v <level>: Log level
+      MSC_LOG_LEVEL=$OPTARG
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+if [[ -n "${1-}" ]]; then
+   Hostname="$1" 
+   shift
+fi
+
+##== Man Start ===
+for d in $MSC_HOST_SETUP_DIR/common $MSC_HOST_SETUP_DIR/hosts.d/$Hostname; do
+  Mode="$(get_mode $d)"
+  msc_log " directory=$d mode=$Mode" debug
+
+  if [[ -z $Mode ]]; then
+    msc_log " no host-setup files found in directory $d" warning
+    continue
+  fi
+
+  cd $d
+  echo "d=$d pwd=$PWD"
+  case $Mode in
+    sh )
+    msc_log " running " info
+      $Sudo ./msc-setup.sh
+      ;;
+    make )
+      $Sudo make install
+      ;;
+    cp )
+      $Sudo cp -Rv * .
+      ;;
+  esac
+  cd -
+done
+
+
+

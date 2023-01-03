@@ -6,25 +6,11 @@
 export MSC_LIBEXEC_DIR
 
 source $MSC_LIBEXEC_DIR/const.sh
+source $MSC_LIBEXEC_DIR/env.sh
 if [ -r $MSC_ETC_MSC_DIR/local.sh ]; then
     source $MSC_ETC_MSC_DIR/local.sh
 fi
 
-: ${MSC_LOG_FACILITY:=user}
-: ${MSC_LOG_LEVEL:=notice}
-: ${MSC_LOG_PREFIX:=}
-
-###
-### MSC_LOG_OPTIONS
-###   Options for logger. Default is '-s', i.e. also print error message to
-###   stderr.
-###   Default: -s
-: ${MSC_LOG_OPTIONS:="-s"}
-###
-### MSC_LOG_TAG
-###   Marked the log with a specified tag.
-###   Default: my-sys-cfg
-: ${MSC_LOG_TAG:=my-sys-cfg}
 
 ##
 ## MscLogWorstStatusCode
@@ -55,7 +41,7 @@ msc_array_get_value() {
 ###
 ###   Arguments:
 ###     msg: message to log
-###     level: refer const.sh or syslog(3)
+###     level: refer const.sh or syslog(3), default is info
 ###     logger-options: other option to pass to logger
 ###   Environments:
 ###     MSG_LOG_TAG: Tag the log message
@@ -70,7 +56,7 @@ msc_log() {
     logLevel=$1
     shift
   else
-    logLevel=$MSC_LOG_LEVEL
+    logLevel=info
   fi
 
   ## Omit the lower priority
@@ -452,4 +438,24 @@ msc_run_if_not_already() {
       msc_log "run_if_not_already: skip the missing command $cmd$sshDebugMsg" warning
     fi
   fi
+}
+
+###
+### msc_condition_met <condition-name>
+###   Return 0 if condition met, 1 otherwise
+###   
+###   Conditions are at $MSC_ETC_MSC_DIR/conditions.d/<condition-name>.cond
+###   It should be a script that return 0 when condition set is met, 1 otherwise 
+###
+###   Arguments:
+###     condition-name: name of condition without '.cond'
+###
+###   Outouts:
+###     stdout out the condition
+###
+###   Returns:
+##3     0 if condition met, non-zero otherwise
+
+msc_condition_met() {
+  source "$MSC_ETC_MSC_DIR/conditions.d/$1.cond"
 }

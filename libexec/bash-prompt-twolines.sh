@@ -1,14 +1,5 @@
-#!/bin/bash
-#set -eu         # Exit when returns non-zero, Error when variable is unset.
-### NAME
-###     bash-prompt.sh - prompt for bash and sh
-###
-### SYNOPSIS
-###     source bash-prompt.sh [options]
-###
-### DESCRIPTION
-###
-### REQUIREMENTS
+### Twolines prompt for bash that support VCS
+### Usage: source from bash-internal.sh
 ###
 ### ENVIRONMENTS
 ###

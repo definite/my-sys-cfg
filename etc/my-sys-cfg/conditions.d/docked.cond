@@ -1,0 +1,28 @@
+### This script outputs the first detected known dock.
+### This script does not intend to provide a comprehensive list of docks
+### To get the devId (vender:product), run lshub -tv
+
+### Put the dock you want in the front, 
+### because this script only returns the first match
+###
+### To disable this condition, uncomment the following line
+# return 1
+
+if [ "x${MSC_KNOWN_DOCKS-}" = "x" ]; then 
+  MSC_KNOWN_DOCKS=" 17ef:30ba" # Lenovo V1003
+  MSC_KNOWN_DOCKS+=" 17e9:4306" # DisplayLink Targus USB3.0 DV Docking Station
+  MSC_KNOWN_DOCKS+=" 17ef:100a" # Lenovo ThinkPad Mini Dock Plus Series 3
+  MSC_KNOWN_DOCKS+=" 17ef:1010" # Lenovo ThinkPad Ultra Dock Hub
+fi
+### }}}End Dock list
+
+
+for devId in $MSC_KNOWN_DOCKS; do
+  if lsusb -d "$devId" >/dev/null; then
+    echo "$devId"
+    return 0
+  fi
+done
+return 1
+
+
