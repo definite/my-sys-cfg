@@ -120,12 +120,13 @@ FilterConnector=
 FilterDescriptor=
 FilterDescriptorValuePattern=
 FilterOutput=
+FilterExternal=
 SessionType=
 FilterXpts=0
 FilterYpts=0
 ###
 ### OPTIONS
-while getopts 'hC:cD:elO:opV:' opt; do
+while getopts 'hC:cD:elO:optV:' opt; do
   case $opt in
     h)
       ###     -h: Print usage
@@ -158,8 +159,12 @@ while getopts 'hC:cD:elO:opV:' opt; do
       DisplayMode=${MODE[XRANDR_OUTPUT]}
       ;;
     p)
-      ###     -o: Show preferred modeline
+      ###     -p: Show preferred modeline
       DisplayMode=${MODE[PREFERRED_MODELINE]}
+      ;;
+    t)
+      ###     -t: Show only external monitors
+      FilterExternal=1
       ;;
     V)
       ###     -V <descriptor=pattern>:
@@ -199,6 +204,10 @@ for edidLine in "${!EdidDrmMap[@]}"; do
   ## Filter out the irrevelent results
   connector="${EdidDrmMap[$edidLine]}"
   if [ -n "$FilterConnector" -a "$FilterConnector" != $connector ]; then
+    continue
+  fi
+
+  if [ -n "$FilterExternal" -a $connector = "card0-eDP-1" ]; then
     continue
   fi
 
