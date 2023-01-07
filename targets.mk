@@ -1,10 +1,12 @@
 # Contain common targets and helper functions
 INST_OWNER ?= root
 INST_GROUP ?= root
-# MODE=0 means unchnaged
+
+# Override File or directory mode
+#   0 means unchnaged
 FILE_MODE ?= 0
 DIR_MODE ?= 0
-FILES=$(shell git ls-files | grep -v Makefile)
+FILES ?= $(shell git ls-files | grep -v Makefile)
 TARGET_FILES=$(addprefix ${INSTALL_DIR}/, ${FILES})
 curr_makefile := $(lastword $(makefile_list))
 
