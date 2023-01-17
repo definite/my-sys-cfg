@@ -14,13 +14,13 @@ Below only list notable changes
 ### New 
 #### Scripts
 
-- msc-condition-find
-- msc-host-setup
+- msc-condition-find: Return the status of the conditions.
+- msc-host-setup: Use host-setup directory to setup the host.
 
 #### Functionality
 
-- Conditions
-- Rules
+- Conditions: Script that returns system status
+- Rules: Script that acts upon conditions
 
 ### Fixed
 

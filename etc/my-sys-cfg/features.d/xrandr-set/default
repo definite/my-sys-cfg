@@ -1,0 +1,4 @@
+if msc_condition_set_met home-center-docked >/dev/null; then
+  return 1
+fi
+return 0
