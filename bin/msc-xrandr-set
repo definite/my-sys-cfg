@@ -5,10 +5,7 @@ MSC_LOG_PREFIX="[msc-xrandr-set] "
 ## Setup my-cfg-sys environment
 eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 
-Prof=$($MSC_BIN_DIR/msc-prof-get)
-OutputProfile=
-declare -A OutputMode
-declare -A OutputOptions
+
 XrandrOpts=()
 ##== Function Start ==
 match() {
@@ -24,69 +21,36 @@ match() {
 }
 
 ##== Parse Start ===
-MonitorsTSV="$MSC_ETC_MSC_DIR/monitors.tsv"
 ###
 ### OPTIONS
-while getopts 'hF:' opt; do
+while getopts 'h' opt; do
     case $opt in
     h)
         ###     -h: Print usage
         msc_help_print $0
         exit $MSC_EXIT_OK
         ;;
-    F)
-        ###     -F <monitors.tsv>: Use the specified monitors.tsv instead
-        MonitorsTSV="$OPTARG"
-        ;;
     esac
 done
 shift $((OPTIND - 1))
 
 ##== Main Start ===
-declare -A XrandrOutputMap
-ConnectedOutputArray=($(${MSC_BIN_DIR}/msc-monitor-find -o))
-while read -r line; do
+Rule=
+for f in ${MSC_ETC_MSC_DIR}/rules.d/xrandr-set/*.sh ; do
+  Lines=$(source $f)
+  [ $? -ne 0 ] && continue
+  Rule=$f
+  while read -r line; do
     IFS=$'\t' read -r -a tokens <<<"$line"
-    if [ -z "$OutputProfile" ]; then
-        if [[ $Prof == ${tokens[0]} ]]; then
-            OutputProfile=${tokens[0]}
-            msc_log "OutputProfile=$Prof" debug
-        else
-            continue
-        fi
-    fi
-
-    ## Only works on matched OutputProfile
-    if [ "${tokens[0]}" = "$OutputProfile" ]; then
-        MonitorFindOpts=$(msc_quotes_strip "${tokens[1]}")
-        XrandrOutput=$(${MSC_BIN_DIR}/msc-monitor-find -o $MonitorFindOpts)
-        if [[ -z $XrandrOutput ]]; then
-            msc_log "MonitorFindOpts $MonitorFindOpts find nothing" debug
-            continue
-        fi
-        XrandrOpts=$(msc_quotes_strip "${tokens[2]}")
-        msc_log "Matched outuput: $XrandrOutput $XrandrOpts" info
-        #xrandr --output $XrandrOutput --off
-        #sleep 1
-        XrandrOutputMap[$XrandrOutput]="$XrandrOpts"
-    fi
-done < <(msc_file_list_effective "$MonitorsTSV")
-
-## Handle the output that is not matched
-
-lastOutput=eDP-1
-XrandrFinalOpts=
-for XrandrOutput in "${ConnectedOutputArray[@]}"; do
-    if [ -z "${XrandrOutputMap[$XrandrOutput]+a}" ]; then
-        if [ $XrandrOutput = eDP-1 ]; then
-            XrandrOutputMap["$XrandrOutput"]="--auto --rotate normal"
-        else
-            XrandrOutputMap["$XrandrOutput"]="--auto --rotate normal --right-of $lastOutput"
-        fi
-        msc_log "Failover output: $XrandrOutputout ${XrandrOutputMap[$XrandrOutput]}" notice
-        lastOutput=$XrandrOutput
-    fi
-    XrandrFinalOpts+=" --output $XrandrOutput ${XrandrOutputMap[$XrandrOutput]}"
+    XrandrOpts+=(--output ${tokens[0]} ${tokens[1]} )
+  done <<<"$Lines"
 done
 
-msc_run_and_log info "xrandr $XrandrFinalOpts"
+if [ -z "$Rule" ]; then
+  Lines=$(source ${MSC_ETC_MSC_DIR}/rules.d/xrandr-set/default)
+  if [ -z "$Lines" ]; then
+    msc_log "Rule default output nothing" 
+  fi
+fi
+
+[ -n "${XrandrOpts[*]}" ] && msc_run_and_log info xrandr "${XrandrOpts[@]}"

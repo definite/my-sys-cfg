@@ -4,10 +4,8 @@
 ##   bash or zsh: login shell and interactive non-login shell
 ##
 : ${MSC_LIBEXEC_DIR:=/usr/libexec/my-sys-cfg}
-export MSC_LIBEXEC_DIR
 source $MSC_LIBEXEC_DIR/functions.sh
-
-MY_PATH=(/rescue /sbin /usr/sbin /usr/local/bin /usr/local/sbin /usr/libexec/git-core $HOME/bin $HOME/.local/bin)
+[ -z "$MY_PATH" ] && MY_PATH=(/rescue /sbin /usr/sbin /usr/local/bin /usr/local/sbin /usr/libexec/git-core $HOME/bin $HOME/.local/bin)
 for p in "${MY_PATH[@]}";do
     msc_pathmunge "$p" after
 done
@@ -18,8 +16,8 @@ if msc_is_interactive_mode ;then
     [ -r /etc/my-sys-cfg/alias_value ] && msc_apply alias /etc/my-sys-cfg/alias_value
     ## Set up prompt
     if [ ! "${ZSH_NAME:-}" = "zsh" ];then
-        ## Set bash prompt
-        ## zsh prompt is set at msc-zsh.sh
-        source $MSC_LIBEXEC_DIR/bash-prompt.sh
+        ## Set bash-only interactive
+        [ -r $MSC_ETC_MSC_DIR/shells.d/bash-interactive.sh ] &&\
+          source $MSC_ETC_MSC_DIR/shells.d/bash-interactive.sh
     fi
 fi

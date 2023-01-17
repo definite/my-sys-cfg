@@ -1,0 +1,11 @@
+# conditions.d
+:toc:
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 3
+:showtitle:
+
+A condition is a script that end with .cond.
+When invoked, it returns 0 when the condition is met, non-zero otherwise.
+
+Condition can also output results through stdout.

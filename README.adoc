@@ -52,5 +52,11 @@ msc-monitor-find -V "Manufacturer=*" -o
 
 Show detailed help with option `-h`
 
-#### msc-prof-get
-This command returns *profile*: a string that contains detected features.
+#### msc-xrandr-set
+This command set xrandr outputs according to xrandr-set rules 
+defined under rules.d/xrandr-set.
+
+[source,sh]
+----
+msc-monitor-find -c
+----

@@ -1,0 +1,3 @@
+# Home center used an Lenovo ThinkPad Thunderbolt 4 Dock
+
+lsusb -d 17ef:30b4 >/dev/null

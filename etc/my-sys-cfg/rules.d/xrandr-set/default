@@ -1,0 +1,3 @@
+# Default action: if no matches
+# Also suitable for reset
+return 1

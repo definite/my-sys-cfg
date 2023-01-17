@@ -1,0 +1,66 @@
+#!/bin/bash
+set -eu # Exit when returns non-zero, Error when variable is unset.
+### NAME
+###     msc-condition-find - Finds conditions and output their values
+###
+### SYNOPSIS
+###     msc-condition-find [options] [condition]
+###
+### DESCRIPTION
+###     This program finds conditions and out their values.
+###
+### EXAMPLES
+###     To find all conditions, run:
+###
+###         msc-condition-find
+###
+###     To find conditon external-monitors, run:
+###
+###         msc-condition-find external-monitors
+###
+### AUTHOR
+###     Ding-Yi Chen (definite), dchen@redhat.com
+###     Created in 2022-Jan-11
+###
+MSC_LOG_PREFIX="[msc-condition-find]"
+trap msc_exit_print_error EXIT
+
+## Setup my-cfg-sys environment
+eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+
+## Functions
+output_condition(){
+  c="$1"
+  basename $c .cond
+  Value=$(source $c)
+
+  [ $? -eq 0 ] && echo "  condition met" 
+  echo "  value=$Value"
+}
+
+###
+### OPTIONS
+while getopts 'h' opt; do
+  case $opt in
+    h)
+      ###     -h: Print usage
+      msc_help_print $0
+      exit $MSC_EXIT_OK
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+cond="${1-}"
+Count=0
+
+if [ -n "$cond" ]; then
+  output_condition "$MSC_ETC_MSC_DIR/conditions.d/$cond.cond"
+else
+   
+  for c in $MSC_ETC_MSC_DIR/conditions.d/*.cond; do
+    [ $Count -gt 0 ] && echo
+    output_condition "$c"
+    : $((Count++))
+  done
+fi
+

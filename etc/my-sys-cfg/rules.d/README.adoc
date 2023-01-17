@@ -1,0 +1,11 @@
+# rules.d
+:toc:
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 3
+:showtitle:
+
+A rule is a shell script that end with .sh.
+When invoked, it acts on corresponding conditions, return 0 if conditions are met, non-zero otherwise.
+
+A rule can also output result through stdout.
