@@ -1,8 +1,0 @@
-MSC_XRANDR_OUTPUT=$($MSC_BIN_DIR/msc-monitor-find -V 'Name=LG*' -o)
-
-if [ -z "$MSC_XRANDR_OUTPUT" ]; then
-  return 1
-fi
-
-echo "$MSC_XRANDR_OUTPUT"
-return 0
