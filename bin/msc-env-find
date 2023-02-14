@@ -1,42 +1,79 @@
 #!/bin/bash
 set -eu # Exit when returns non-zero, Error when variable is unset.
 ### NAME
-###     msc-env-find - Detect the environment to be used by my-sys-cfg
+###     msc-env-find - Output my-sys-cfg environment base invokation path 
 ###
 ### SYNOPSIS
 ###     msc-env-find [options]
 ###
 ### DESCRIPTION
-###     This program will find msc-env-find location to be used,
-###     then print the corresponding environment variables.
+###     This program outputs environment values depending on the running mode: 
+###     
+###     Production mode:
+###        msc-env-find runs from system binary path, 
+###            i.e. /bin, /usr/bin, or /usr/local/bin
+### 
+###        Environment values in this mode:
+###            MSC_BIN_DIR=<directory that msc-env-find is invoked>
+###            MSC_LIBEXEC_DIR=/usr/libexec/my-sys-cfg
+###            MSC_ETC_DIR=/etc
+###            MSC_ETC_MSC_DIR=/etc/my-sys-cfg
+###
+###     Developing mode:
+###        msc-env-find runs from project checkout dir, 
+###            e.g. the git repostory you just checkout
+###           
+###        Environment values in this mode:
+###            MSC_BIN_DIR=<directory that msc-env-find is invoked>
+###            MSC_LIBEXEC_DIR=PROJ_CHECKOUT_DIR/libexec
+###            MSC_ETC_DIR=PROJ_CHECKOUT_DIR/etc/
+###            MSC_ETC_MSC_DIR=PROJ_CHECKOUT_DIR/etc/my-sys-cfg
+###
+###     Notes that, excecpt MSC_BIN_DIR, other environment values will not overwrite
+###     existing values.
+###
+### INVOCATION
+###     Other my-sys-cfg program can use following to get the required environments
+###         eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 ###
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dingyichen@gmail.com
 ###     Created in 2020-01-29
 ###
 
-##== Detection Start ==
-Installed=0
+## MSC_BIN_DIR set to the directory that msc-env-find running
 MSC_BIN_DIR=$(dirname $(realpath ${BASH_SOURCE[0]}))
-## if MSC_BIN_DIR in PATH, then my-sys-cfg bin is installed
-case ":$PATH:" in
-  *:${MSC_BIN_DIR}:*)
-    MSC_LIBEXEC_DIR=/usr/libexec/my-sys-cfg
-    Installed=1
-    ;;
-  *)
-    MSC_LIBEXEC_DIR=$(realpath ${MSC_BIN_DIR}/../libexec)
-    ;;
-esac
-
-## source functions, so we can use them later in this program
-source $MSC_LIBEXEC_DIR/functions.sh
-
-if [ $Installed -eq 1 ]; then
-  MSC_ETC_MSC_DIR=/etc/my-sys-cfg
+##{{{== Is Development mode?
+DevelopmentMode=0
+if [[ -e "$MSC_BIN_DIR/../libexec/functions.sh" ]]; then
+  DevelopmentMode=1
+  MSC_ROOT_DIR=$(dirname "$MSC_BIN_DIR")
+  : ${MSC_LIBEXEC_DIR:="$MSC_ROOT_DIR/libexec"}
+  : ${MSC_ETC_DIR:="$MSC_ROOT_DIR/etc"}
+  : ${MSC_ETC_MSC_DIR:="$MSC_ETC_DIR/my-sys-cfg"}
 else
-  MSC_ETC_MSC_DIR=$(realpath ${MSC_BIN_DIR}/../etc/my-sys-cfg)
+  : ${MSC_LIBEXEC_DIR:="/usr/libexec/my-sys-cfg"}
+  : ${MSC_ETC_DIR:="/etc"}
+  : ${MSC_ETC_MSC_DIR:="$MSC_ETC_DIR/my-sys-cfg"}
 fi
+##}}}
+
+##{{{== Error if directory is missing 
+Missing=0
+RelevantEnvs="MSC_LIBEXEC_DIR MSC_ETC_DIR MSC_ETC_MSC_DIR"
+for k in $RelevantEnvs; do
+  eval "d=$(eval echo \$$k)"
+  if [[ ! -r "$d" ]]; then
+    logger -s "Directory $d for $k is unreadable"
+    Missing=1
+  fi
+done
+
+if [[ $Missing -eq 1 ]]; then
+  exit 
+fi
+
+##}}}
 ##== Parse Start ==
 SourceFunctionsShPrint=0
 ###
@@ -58,8 +95,8 @@ while getopts "hf" opt; do
 done
 shift $((OPTIND - 1))
 
-for v in MSC_BIN_DIR MSC_LIBEXEC_DIR MSC_ETC_MSC_DIR; do
-  echo "export $v=$(eval echo \$$v)"
+for v in MSC_BIN_DIR $RelevantEnvs; do
+  echo "$v=$(eval echo \$$v)"
 done
 
 if [ $SourceFunctionsShPrint -eq 1 ]; then
