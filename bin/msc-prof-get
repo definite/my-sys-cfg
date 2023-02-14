@@ -23,77 +23,15 @@ MSC_LOG_PREFIX="[msc-prof-get] "
 ## Setup my-cfg-sys environment
 eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 ##== Function Start ==
-match_host() {
-    local pattern="$1"
-    if [[ $(hostname) != $pattern ]]; then
-        return 1
-    fi
-    return 0
-}
-
-match_neigh_mac() {
-    local pattern="$1"
-    local neighbours=$(ip neigh show nud reachable)
-    neighbours+=$(ip neigh show nud stale)
-    if [ -z "${neighbours-}" ]; then
-        return 1
-    fi
-    for n in $(awk '{print $5}' <<<"$neighbours"); do
-        if [[ $n == $pattern ]]; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-match_usb() {
-    local pattern="$1"
-    if lsusb -d $pattern >/dev/null; then
-        return 0
-    fi
-    return 1
-}
-
-match_net_name() {
-    local pattern="$1"
-    while read -r line; do
-        if [[ $line == $pattern ]]; then
-            return 0
-        fi
-    done < <(nmcli --terse --fields name con show --active)
-    return 1
-}
-
-match_file_contain() {
-    local pattern="$1"
-    local option="$2"
-    if [[ ! -e $pattern ]]; then
-        return 1
-    fi
-    if [[ ! $(cat "$pattern") = $option ]]; then
-        return 1
-    fi
-    return 0
-}
-
-match() {
-    local tag="$1"
-    local category="$2"
-    local pattern="$3"
-    local option="${4:-}"
-    if eval "match_$(tr '[:upper:]' '[:lower:]' <<<$category) \"$pattern\" \"$option\""; then
-        msc_log "tag $tag matched category $category pattern $pattern"
-        Result+="$tag+"
-    fi
-}
 
 ##== Main Start ==
 Result="+$(hostname -s)+"
 Count=0
 
 for c in $MSC_ETC_MSC_DIR/conditions.d/*.cond; do
-  Out=$(source "$c")
-  [ $? -ne 0 ] && continue
+  Out=$(source "$c") || continue
+
+  ## If condition send nothing in stdout, also continue
   [ "x$Out" = "x" ] && continue
 
   ## For multi-lines, show all 
