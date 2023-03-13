@@ -20,7 +20,7 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dchen@redhat.com
-###     Created in 2022-Jan-11
+###     Created in 2023-Jan-11
 ###
 MSC_LOG_PREFIX="[msc-condition-find]"
 trap msc_exit_print_error EXIT
@@ -32,9 +32,8 @@ eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 output_condition(){
   c="$1"
   basename $c .cond
-  Value=$(source $c)
+  Value=$(source $c) && echo "  condition met" || echo "  condition NOT met"
 
-  [ $? -eq 0 ] && echo "  condition met" 
   echo "  value=$Value"
 }
 
