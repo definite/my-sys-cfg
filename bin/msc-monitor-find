@@ -271,7 +271,7 @@ for edidLine in "${!EdidDrmMap[@]}"; do
 done
 
 if [[ $ResultCount -lt 1 ]]; then
-    msc_fail "No results for your search criteria" $MSC_EXIT_RETURN_FALSE
+  msc_fail "No results for your search criteria" $MSC_EXIT_RETURN_FALSE
 fi
 exit $MSC_EXIT_OK
 
