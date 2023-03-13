@@ -11,7 +11,6 @@ if [ -r $MSC_ETC_MSC_DIR/local.sh ]; then
     source $MSC_ETC_MSC_DIR/local.sh
 fi
 
-
 ##
 ## MscLogWorstStatusCode
 ##   Worst (Biggest) status code encountered
@@ -153,16 +152,7 @@ msc_fail() {
 }
 
 ###
-### msc_file_list_effective <file>
-###    Prints lines whose first non-whitespace character is not '#'
-###    In other words, this function skip empty, whitespace, or commented line
-msc_file_list_effective() {
-  local file="${1:=/dev/stdin}"
-  sed -ne '/^[[:space:]]*[^#]/p' "$file"
-}
-
-###
-### msc_apply <cmd> <file>
+### msc_apply <cmd> [file]
 ###     Apply a command to a key=value file.
 ###     For example, "msc_apply alias a_file" means
 ###     applying alias to each key=value lines in a_file.
@@ -174,6 +164,15 @@ msc_apply() {
   while IFS= read -r line; do
     eval "$cmd $line"
   done < <( msc_file_list_effective "$file")
+}
+
+###
+### msc_file_list_effective <file>
+###    Prints lines whose first non-whitespace character is not '#'
+###    In other words, this function skip empty, whitespace, or commented line
+msc_file_list_effective() {
+  local file="${1:=/dev/stdin}"
+  sed -rne '/^[[:space:]]*$/!p' "$file" | sed -rne '/^[[:space:]]*[#]/!p'
 }
 
 ###
