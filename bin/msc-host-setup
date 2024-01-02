@@ -1,7 +1,7 @@
 #!/bin/bash
-set -eu # Exit when returns non-zero, Error when variable is unset.
+## Usage {{{
 ### NAME
-###     msc-host-setup - Setup hos
+###     msc-host-setup - Setup host according to a host-setup directory
 ###
 ### SYNOPSIS
 ###     msc-host-setup [options] [hostname]
@@ -12,6 +12,9 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###     It invokes host-setup file under $MSC_HOST_SETUP_DIR/common,
 ###     Then invokes scripts under $MSC_HOST_SETUP_DIR/hosts.d/$hostname
 ###       
+### ARGUMENTS
+###     hostname: Name of the host.
+###  
 ### ENVIRONMENTS
 ###     MSC_HOST_SETUP_DIR
 ###         Location of MSC host-setup directory. 
@@ -19,19 +22,20 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ###         Default: /etc/my-sys-cfg/host-setup
 : ${MSC_HOST_SETUP_DIR:=/etc/my-sys-cfg/host-setup}
 ###
-### ARGUMENTS
-###     hostname: Name of the host.
-###  
 ### AUTHOR
 ###     Ding-Yi Chen (definite), dingyichen@gmail.com
 ###     Created in 2023-01-13 17:33:17
 ###
+## }}}
+## MSC header {{{
+set -eu # Exit when returns non-zero, Error when variable is unset.
 MSC_LOG_PREFIX="[msc-host-setup] "
 
 ## Setup my-cfg-sys environment
 eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+## }}}
 
-##== Function Start ==
+## Function Start {{{
 get_mode(){
   local dir="$1"
   if [ ! -r $dir ]; then
@@ -45,8 +49,9 @@ get_mode(){
   fi
 }
 
+## }}}
 
-##== Parse Start ===
+## Parse Start {{{
 ###
 ### OPTIONS
 MSC_LOG_LEVEL=info
@@ -72,16 +77,21 @@ while getopts 'hsv:' opt; do
       ;;
   esac
 done
+
 shift $((OPTIND - 1))
+
 if [[ -n "${1-}" ]]; then
-   Hostname="$1" 
-   shift
+  Hostname="$1" 
+  shift
 fi
 
-##== Man Start ===
+msc_log "Host setup directory=$MSC_HOST_SETUP_DIR"  
+msc_log "LogLevel=$MSC_LOG_LEVEL Sudo=$Sudo" debug 
+## }}}
+## Main {{{
 for d in $MSC_HOST_SETUP_DIR/common $MSC_HOST_SETUP_DIR/hosts.d/$Hostname; do
   Mode="$(get_mode $d)"
-  msc_log " directory=$d mode=$Mode" debug
+  msc_log " directory=$d mode=$Mode"
 
   if [[ -z $Mode ]]; then
     msc_log " no host-setup files found in directory $d" warning
@@ -89,7 +99,6 @@ for d in $MSC_HOST_SETUP_DIR/common $MSC_HOST_SETUP_DIR/hosts.d/$Hostname; do
   fi
 
   cd $d
-  echo "d=$d pwd=$PWD"
   case $Mode in
     sh )
     msc_log " running " info
@@ -104,6 +113,4 @@ for d in $MSC_HOST_SETUP_DIR/common $MSC_HOST_SETUP_DIR/hosts.d/$Hostname; do
   esac
   cd -
 done
-
-
-
+## }}}
