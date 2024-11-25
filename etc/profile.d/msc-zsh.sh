@@ -7,17 +7,17 @@
 ## such as PS1.
 
 if [ "${ZSH_NAME:-}" = "zsh" ]; then
-    : ${MSC_LIBEXEC_DIR:=/usr/libexec/my-sys-cfg}
-    source $MSC_LIBEXEC_DIR/functions.sh
-    MSC_LOG_TAG=UserStartup
-    MSC_LOG_PREFIX="[msc-zsh.sh] "
-    msc_log "SHLVL=$SHLVL DESKTOP_SESSION=$DESKTOP_SESSION" debug
+  : ${MSC_LIBEXEC_DIR:=/usr/libexec/my-sys-cfg}
+  source $MSC_LIBEXEC_DIR/functions.sh
+  MSC_LOG_TAG=UserStartup
+  MSC_LOG_PREFIX="[msc-zsh.sh] "
+  msc_log "SHLVL=$SHLVL DESKTOP_SESSION=$DESKTOP_SESSION" debug
 
-    if [ "${-#*i}" != "$-" ]; then
-        ## Interactive Shell
-        msc_log "Interactive mode" debug
+  if [ "${-#*i}" != "$-" ]; then
+    ## Interactive Shell
+    msc_log "Interactive mode" debug
 
-        [ -r $MSC_ETC_MSC_DIR/shells.d/zsh-interactive.sh ] &&\
-          source $MSC_ETC_MSC_DIR/shells.d/zsh-interactive.sh
-    fi
+    [ -r $MSC_ETC_MSC_DIR/shells.d/zsh-interactive.sh ] &&\
+    source $MSC_ETC_MSC_DIR/shells.d/zsh-interactive.sh
+  fi
 fi
