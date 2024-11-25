@@ -5,6 +5,8 @@
 :sectnumlevels: 3
 :showtitle:
 
+See [Release Notes in GitHub](https://github.com/definite/my-sys-cfg/releases) for v1.0.1 or later
+
 ## v1.0.0
 First stable release. It is a big jump from pre 1.0 version.
 Thus it is not compatible with pre 1.0 version. 
