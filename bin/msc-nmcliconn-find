@@ -1,0 +1,131 @@
+#!/bin/bash
+set -eu # Exit when returns non-zero, Error when variable is unset.
+### NAME
+###     msc-nmcliconn-find - Find the active nmcli connection
+###
+### SYNOPSIS
+###     msc-nmcliconn-find [-t conn_type|-n conn_name]
+###
+### DESCRIPTION
+###     This program finds active nmcli connections.
+###
+###
+###     If neither conn_type nor conn_name are specified, this program simply shows the output of
+###       
+###         nmcli --terse --fields type,name connection show --active --order type
+###
+### REQUIREMENTS
+###     Systemd service NetworkManager needs to be running, otherwise nmcli won't work.
+###
+### EXAMPLES
+###     To list active ethernet connections, run:
+###
+###         msc-nmcliconn-find -c ethernet
+###
+### AUTHOR
+###     Ding-Yi Chen (definite), dingyichen@gmail.com
+###     Created in 2024-11-22 15:22:51
+###
+MSC_LOG_PREFIX="[msc-nmcliconn-find]"
+trap msc_exit_print_error EXIT
+
+## Setup my-cfg-sys environment
+eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
+
+##== Functions{{{
+nmcli_active_connections_all(){
+  nmcli --terse --fields type,name connection show --active --order type
+}
+
+nmcli_active_connections_by_type(){
+  nmcli_active_connections_all | sed -nre "/^[^:]*$1:/ s/^[^:]*://p"
+}
+##}}}
+
+##== Parsing {{{
+ConnType=
+ConnName=
+###
+### OPTIONS
+while getopts 'hn:t:' opt; do
+  case $opt in
+    h)
+###     -h: Print usage
+      msc_help_print $0
+      exit $MSC_EXIT_OK
+      ;;
+###     -n conn_name: Filter by name of the connection
+###         The name of connection as in nmcli connection show
+###         So far, only exact string. Quote the string if name contains spaces.
+    n)
+      ConnName="$OPTARG"
+      ;;
+
+###     -t conn_type: Filter by connection type
+###         The nmcli connection type.
+###         Frequently used connection type are:
+###             - 802-11-wireless
+###             - 802-3-ethernet
+###             - bond
+###             - ethernet
+###             - team
+###             - tun
+###             - vpn
+###             - wifi
+    t)
+      ConnType="$OPTARG"
+      ;;
+    *)
+      ##  Argument invalid
+      exit $MSC_EXIT_CRIT_ARGUMENTS_INVALID
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+## }}}
+
+##== Main {{{
+if [[ -n "$ConnType" ]]; then
+  case "$ConnType" in
+    *bond)
+      nmcli_active_connections_by_type bond
+      exit $MSC_EXIT_OK
+      ;;
+    *ethernet)
+      nmcli_active_connections_by_type ethernet
+      exit $MSC_EXIT_OK
+      ;;
+    *vpn)
+      nmcli_active_connections_by_type vpn
+      exit $MSC_EXIT_OK
+      ;;
+    *team)
+      nmcli_active_connections_by_type team
+      exit $MSC_EXIT_OK
+      ;;
+    *tun)
+      nmcli_active_connections_by_type tun
+      exit $MSC_EXIT_OK
+      ;;
+    *wireless|wifi)
+      nmcli_active_connections_by_type wireless
+      exit $MSC_EXIT_OK
+      ;;
+    *)
+      MscExitMsg="Connection type $ConnType not supported"
+      exit $MSC_EXIT_CRIT_ARGUMENTS_INVALID
+      ;;
+  esac
+elif [[ -n "$ConnName" ]]; then
+  Result=$(nmcli_active_connections_all | awk  -v "conn_name=$ConnName" -F :  'conn_name==$2 {print $1}' )
+  if [[ -z "$Result" ]]; then
+    MscExitMsg="No such conn name"
+    exit $MSC_EXIT_RETURN_FALSE
+  fi
+  echo "$Result"
+  exit $MSC_EXIT_OK
+fi
+
+nmcli_active_connections_all
+exit $MSC_EXIT_OK
+##}}}
