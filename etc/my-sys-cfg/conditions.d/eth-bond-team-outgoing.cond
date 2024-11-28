@@ -1,0 +1,29 @@
+### Whether we use ethernet, team or bond connection to 
+### This is checked by whether we use above connection to the default router.
+### If success, output the interface of default route
+### To disable this condition, uncomment the following line
+# return 1
+
+## It is possible that 2 interface connect to default router
+## e.g. Docking/Undock
+
+MscDefaultIFaces=$(ip route show exact 0/0 | sed -re 's/^.*dev ([[:alnum:]]+) .*$/\1/')
+
+for iface in $MscDefaultIFaces; do
+  MscIFaceType=$(nmcli -g GENERAL.TYPE device show $iface)
+  case $MscIFaceType in
+    ethernet)
+      echo $iface
+      unset MscDefaultIFaces MscIFaceType
+      return 0
+      ;;
+    bond | team)
+      ## Usually bond and team associate with ethernet 
+      echo $iface
+      unset MscDefaultIFaces MscIFaceType
+      return 0
+      ;;
+  esac
+done 
+unset MscDefaultIFaces
+return 1
