@@ -1,37 +1,76 @@
-# RELEASE-NOTES
+= RELEASE-NOTES
 :toc:
 :toclevels: 3
 :sectnums:
 :sectnumlevels: 3
 :showtitle:
 
-See [Release Notes in GitHub](https://github.com/definite/my-sys-cfg/releases) for v1.0.1 or later
+From release v1.0.1, the change log items are also available as git tag annotation.
+View https://github.com/definite/my-sys-cfg/releases[Release Notes in GitHub], or use `git show <TAG>`
 
-## v1.0.0
+
+== v2.0.1
+=== Fixed
+- Actually remove the wired.cond
+- Convert RELEASE-NOTES.adoc and README.adoc to actuall asciidoc format
+
+
+== v2.0.0
+=== Major change
+==== wired cond is renamed to eth-bond-team-outgoing.cond
+    
+Renamed wired cond to eth-bond-team-outgoing.cond. 
+The new name, eth-bond-team-outgoing, clearly indicates the purpose of the 
+condition: met when either eth, bond or team have a outgoing active connection.
+
+The previous name, wired, does not reflect the nature of such
+intension.
+
+== v1.1.0
+
+=== New
+- msc-nmcliconn-find: New program 
+
+=== Fixed
+- https://github.com/definite/my-sys-cfg/issues/12[12]: Show nmcli active connection of a given type
+- msc-host-setup usage revised
+
+== v1.0.1
+
+=== Change
+- condition-sets are simplified as conditions 
+
+=== Fixed
+- condition-find: properly show when conditions are not met
+- msc-env-find: correct path in developing mode
+- function msc_file_list_effective: mistakenly show the line with ' #' at start of line
+
+
+== v1.0.0
 First stable release. It is a big jump from pre 1.0 version.
 Thus it is not compatible with pre 1.0 version. 
 
 Below only list notable changes
 
-### New 
-#### Scripts
+=== New 
+==== Scripts
 
 - msc-condition-find: Return the status of the conditions.
 - msc-host-setup: Use host-setup directory to setup the host.
 
-#### Functionality
+==== Functionality
 
 - Conditions: Script that returns system status
 - Rules: Script that acts upon conditions
 
-### Fixed
+==== Fixed
 
 - Issue 
 https://github.com/definite/my-sys-cfg/issues/9[9]: Support for Conditions
 
-### Changed
+=== Changed
 
-#### msc-prof-get 
+==== msc-prof-get 
 
 It is now deprecated. The prof string it generates now became:
 
@@ -45,7 +84,7 @@ For conditions that produce multiple lines, the met-condition become:
 line1+line2..
 ----
 
-### Removed
+=== Removed
 
 - Feature functionality. Superseded with conditions
   

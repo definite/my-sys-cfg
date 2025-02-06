@@ -1,4 +1,4 @@
-# my-sys-cfg
+= my-sys-cfg
 :toc:
 :toclevels: 3
 :sectnums:
@@ -11,13 +11,11 @@ changes.
 For example, my-sys-cfg resolves the re-docking problems which are caused by
 the changing XRandr output name after undocking and docking.
 
-_Note that before version 1.0, the format of configuration file might change_
-
-## Dependencies
+== Dependencies
  - monitor-edid ( provided by `monitor-edid` in Fedora)
  - (Optional) xrandr
 
-## Usages
+== Usages
 Most commands show on-line helps with option `-h`. For example,
 following command show the on-line help of msc-monitor-find
 
@@ -26,8 +24,8 @@ following command show the on-line help of msc-monitor-find
 msc-monitor-find -h
 ----
 
-### Notable Commands
-#### msc-monitor-find
+=== Notable Commands
+==== msc-monitor-find
 This command finds monitor information with `EDID`, `xrandr`,
 and `/sys/class/drm`.
 
@@ -52,7 +50,7 @@ msc-monitor-find -V "Manufacturer=*" -o
 
 Show detailed help with option `-h`
 
-#### msc-xrandr-set
+==== msc-xrandr-set
 This command set xrandr outputs according to xrandr-set rules 
 defined under rules.d/xrandr-set.
 
