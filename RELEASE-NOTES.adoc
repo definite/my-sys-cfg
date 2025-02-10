@@ -8,6 +8,10 @@
 From release v1.0.1, the change log items are also available as git tag annotation.
 View https://github.com/definite/my-sys-cfg/releases[Release Notes in GitHub], or use `git show <TAG>`
 
+== v2.1.0
+=== New
+- Fixes https://github.com/definite/my-sys-cfg/issues/13[13]: msc-host-setup should be able to specify scope of update
+
 
 == v2.0.1
 === Fixed

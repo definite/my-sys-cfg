@@ -1,6 +1,6 @@
 ### Definition of constants
 ## To source this script, via msc-env-find is recommended 
-MSC_VERSION=2.0.1
+MSC_VERSION=2.1.0
 
 declare -A MscExitMessageDict
 
