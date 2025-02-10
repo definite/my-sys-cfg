@@ -9,16 +9,27 @@
 ### DESCRIPTION
 ###     Setup host according to host-setup directory.
 ###     
-###     It invokes host-setup file under $MSC_HOST_SETUP_DIR/common,
-###     Then invokes scripts under $MSC_HOST_SETUP_DIR/hosts.d/$hostname
+###     Under the host-setup directory, the structure looks like
+###     + common
+###     | + etc
+###     | | + my-sys-cfg
+###     | + ...
+###     + host.d
+###     | + host1
+###     | | + etc
+###     | | | + my-sys-cfg
+###     | | | + ....
+###     | + ...
+###
+###     The setting files that applied to all hosts are under common/;
+###     and the host specific files are under host.d/<hostname>/
 ###       
 ### ARGUMENTS
 ###     hostname: Name of the host.
 ###  
 ### ENVIRONMENTS
 ###     MSC_HOST_SETUP_DIR
-###         Location of MSC host-setup directory. 
-###         Setup 
+###         Location of MSC host-setup directory.          
 ###         Default: /etc/my-sys-cfg/host-setup
 : ${MSC_HOST_SETUP_DIR:=/etc/my-sys-cfg/host-setup}
 ###
@@ -44,7 +55,7 @@ get_mode(){
     echo "sh"
   elif [ -r "$dir/Makefile" ]; then
     echo "make"
-  else 
+  else  
     echo "cp"
   fi
 }
@@ -54,11 +65,18 @@ get_mode(){
 ## Parse Start {{{
 ###
 ### OPTIONS
-MSC_LOG_LEVEL=info
+MSC_LOG_LEVEL=notice
 Mode=
 Sudo=
+Target=
+## 
 Hostname=$(hostname -s)
-while getopts 'hsv:' opt; do
+## PerformedActionArray
+##   It is possible that some files only exist in either common or host specific.
+##   Showing the success one on notice level won't make users think why it failed.
+declare -a PerformedActionArray
+
+while getopts 'hst:v:' opt; do
   case $opt in
     h)
       ###     -h: Print usage
@@ -69,10 +87,19 @@ while getopts 'hsv:' opt; do
       ###
       ###     -s: Sudo mode
       Sudo=/usr/bin/sudo
-      ;;       
+      ;;
+    t)
+      ###
+      ###     -t <path>: Update target path 
+      ###       For example, -t /etc/my-sys-cfg copies corresponding host-setup files to /etc/my-sys-cfg.
+      Target="$OPTARG"
+      ;;
     v)
       ###
       ###     -v <level>: Log level
+      ###        Available: debug1, debug, info, notice: 
+      ###          err, crit, alert, emerg
+      ###        Default: notice
       MSC_LOG_LEVEL=$OPTARG
       ;;
   esac
@@ -85,23 +112,36 @@ if [[ -n "${1-}" ]]; then
   shift
 fi
 
-msc_log "Host setup directory=$MSC_HOST_SETUP_DIR"  
+msc_log "Host setup directory=$MSC_HOST_SETUP_DIR" info 
 msc_log "LogLevel=$MSC_LOG_LEVEL Sudo=$Sudo" debug 
 ## }}}
 ## Main {{{
-for d in $MSC_HOST_SETUP_DIR/common $MSC_HOST_SETUP_DIR/hosts.d/$Hostname; do
-  Mode="$(get_mode $d)"
-  msc_log " directory=$d mode=$Mode"
+
+for p in $MSC_HOST_SETUP_DIR/common/$Target $MSC_HOST_SETUP_DIR/hosts.d/$Hostname/$Target; do
+  if [[ ! -r $p ]]; then
+    msc_log " path=$p is not readable, skip" info
+    continue
+  fi
+  if [[ -f $p ]]; then
+    Action="$Sudo cp $p $Target"
+    msc_log " $Action" debug 
+    eval "$Action"
+    restorecon -v "$Target"
+    PerformedActionArray+=( "$Action" )
+    continue
+  fi
+  Mode="$(get_mode $p)"
+  msc_log " path=$p mode=$Mode" debug
 
   if [[ -z $Mode ]]; then
     msc_log " no host-setup files found in directory $d" warning
     continue
   fi
 
-  cd $d
+  cd $p
   case $Mode in
     sh )
-    msc_log " running " info
+      msc_log " running " info
       $Sudo ./msc-setup.sh
       ;;
     make )
@@ -113,4 +153,7 @@ for d in $MSC_HOST_SETUP_DIR/common $MSC_HOST_SETUP_DIR/hosts.d/$Hostname; do
   esac
   cd -
 done
+
+msc_log "Performed Actions:" notice
+msc_log "$(printf '  %s\n' "${PerformedActionArray[@]}")" notice
 ## }}}
