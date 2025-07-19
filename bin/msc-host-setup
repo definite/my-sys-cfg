@@ -29,7 +29,7 @@
 ###  
 ### ENVIRONMENTS
 ###     MSC_HOST_SETUP_DIR
-###         Location of MSC host-setup directory.          
+###         Location of MSC host-setup directory.
 ###         Default: /etc/my-sys-cfg/host-setup
 : ${MSC_HOST_SETUP_DIR:=/etc/my-sys-cfg/host-setup}
 ###
@@ -55,7 +55,7 @@ get_mode(){
     echo "sh"
   elif [ -r "$dir/Makefile" ]; then
     echo "make"
-  else  
+  else
     echo "cp"
   fi
 }
