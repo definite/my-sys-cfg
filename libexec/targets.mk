@@ -1,13 +1,31 @@
-# Contain common targets and helper functions
+## my-sys-cfg make Targets
+### Environments
+###     INSTALL_DIR: (required)
+###         The directory where files will be installed
+###
+###     INST_OWNER:
+###         The owner of the installed files
+###         Default: root
 INST_OWNER ?= root
+###
+###     INST_GROUP:
+###         The group of the installed files
+###         Default: root
 INST_GROUP ?= root
-
-# Override File or directory mode
-#   0 means unchnaged
+###
+###     FILE_MODE:
+###         The file mode to set for installed files
+###         Default: 0 (unchanged)
 FILE_MODE ?= 0
+###
+###     DIR_MODE: 
+###         The directory mode to set for installed directories
+###         Default: 0 (unchanged)
 DIR_MODE ?= 0
-FILES ?= $(shell git ls-files | grep -v Makefile)
-TARGET_FILES=$(addprefix ${INSTALL_DIR}/, ${FILES})
+
+## Install whatever in git ls-files, except Makefile
+GIT_LS_FILES ?= $(shell git ls-files | grep -v Makefile)
+TARGET_FILES=$(addprefix ${INSTALL_DIR}/, ${GIT_LS_FILES})
 curr_makefile := $(lastword $(makefile_list))
 
 ifneq ($(FILE_MODE),0)
@@ -22,10 +40,10 @@ endif
 	chown --changes ${INST_OWNER}:${INST_GROUP} $(dir ${INSTALL_DIR}/$*)
 	install -t $(dir ${INSTALL_DIR}/$*) -o ${INST_OWNER} -g ${INST_GROUP} $(INSTALL_MODE_OPT) $*
 
-### sudo make install: install to INSTALL_DIR, without override the newer file
+##+ make install: Install to INSTALL_DIR, without override the newer file
 install: ${TARGET_FILES}
 
-### sudo make install-force: install to INSTALL_DIR, and overwrite the target files.
+##+ make install-force: Install to INSTALL_DIR, and overwrite the target files.
 install-force:
 	mkdir -p ${INSTALL_DIR}
 	tar -c ${FILES} | tar --overwrite -xv --directory ${INSTALL_DIR}
@@ -36,8 +54,8 @@ install-force:
 		chown --changes ${INST_OWNER}:${INST_GROUP} "$$f";\
 		done
 
-### sudo make se-install: install and set the SELinux labels
-se-install: ${TARGET_FILES}
+##+ make se-install: Install and set the SELinux labels
+se-install: install
 	## RHEL 7 and earlier does not support restorecon -D
 	if restorecon -h |& grep '\-[^ ]*D' > /dev/null; then\
 		restorecon -DRv ${INSTALL_DIR};\
@@ -45,18 +63,18 @@ se-install: ${TARGET_FILES}
 		restorecon -Rv ${INSTALL_DIR};\
 	fi
 
-### make debug: Show the variable values
+##+ make debug: Show the variable values
 debug:
 	@echo "INSTALL_DIR=${INSTALL_DIR}"
-	@echo "FILES=${FILES}"
+	@echo "GIT_LS_FILES=${GIT_LS_FILES}"
 	@echo "TARGET_FILES=${TARGET_FILES}"
 
-### make diff: Show the diff between source and target
+##+ make diff: Show the diff between source and target
 diff:
 	for f in ${FILES}; do echo "File: $$f"; diff {,${INSTALL_DIR}/}$$f; done
 
-### make copy-to-source: Copy the target files back to source.
-###	 Useful when testing new setting with target files directly.
+##+ make copy-to-source: Copy the target files back to source.
+##+	 Useful when testing new setting with target files directly.
 copy-to-source:
 	for f in ${FILES}; do cp --update --preserve=timestamps -v ${INSTALL_DIR}/$$f $$f; done
 
