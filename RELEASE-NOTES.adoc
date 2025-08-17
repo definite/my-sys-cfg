@@ -10,8 +10,13 @@ View https://github.com/definite/my-sys-cfg/releases[Release Notes in GitHub], o
 
 == v2.2.0
 === New
+==== Make targets
+- New make targets: restorecon, se-install-force
+- make help now show the document of enviroment variables
+
 === Fixed
 - Add *.mk in .editorconfig
+- Fix preserve FILE_MODE and DIR_MODE
 
 == v2.1.0
 === New
