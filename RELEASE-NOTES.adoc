@@ -7,6 +7,11 @@
 
 From release v1.0.1, the change log items are also available as git tag annotation.
 View https://github.com/definite/my-sys-cfg/releases[Release Notes in GitHub], or use `git show <TAG>`
+== v3.0.0
+=== Major Change
+- Include errno as status code
+- Deprecate MSC_EXIT_STATUS_*, use MSC_RETURN_* instead
+- Deprecate MSC_LOG_LEVEL_DICT, use MSC_SEVERITY_* instead
 
 == v2.2.0
 === New

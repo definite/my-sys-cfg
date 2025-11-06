@@ -12,7 +12,13 @@ if [ -r $MSC_ETC_MSC_DIR/local.sh ]; then
 fi
 
 ##
-## MscLogWorstStatusCode
+## MscMostSevereLevel
+##   Most severe level encountered
+##   Initial value is $MSC_SEVERITY_NONE
+MscMostSevereLevel=$MSC_SEVERITY_NONE
+
+##
+## MscLogWorstStatusCode (Deprecated)
 ##   Worst (Biggest) status code encountered
 ##   This is mainly for the log level 'error', which means the eventually
 ##   the program will fail, but no need to exit immediately.
@@ -32,6 +38,15 @@ msc_array_get_value() {
     ## Need quote for associative array in bash
     eval 'echo ${'$1"['"$2"']}"
   fi
+}
+
+###
+###  msc_log_emerg <msg> [logger options...]
+###    Log an emergency message and notify all users
+msg_log_emerg() {
+  local msg="$1"
+  shift
+  logger $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.emerg" "$@" "$MSC_LOG_PREFIX[EMERG] $msg"
 }
 
 ###
