@@ -1,0 +1,12 @@
+== v3.0.0
+=== Motivation
+* Severity should be determined by caller, subroutines should only return values
+  + log functions should be changed accordingly
+
+=== Major Changes
+- Include errno as status code
+- Deprecate MSC_EXIT_STATUS_*, use MSC_RETURN_* instead
+- Deprecate MSC_LOG_LEVEL_DICT, use MSC_SEVERITY_* instead
+- Deprecate msc_log, use per-level msc_log_<level> functions instead
+  (msc_log_debug, msc_log_info, msc_log_notice, msc_log_warning,
+  msc_log_err, msc_log_crit, msc_log_alert, msc_log_emerg)

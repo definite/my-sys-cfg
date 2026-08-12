@@ -12,11 +12,17 @@
 ###     Syslog facility to use for logging.
 ###     Default: user
 : ${MSC_LOG_FACILITY:=user}
+### 
+### MSC_LOG_FILE
+###     Log file
+###     Default: empty (No log to file)
+: ${MSC_LOG_FILE:=}
 ###
 ### MSC_LOG_LEVEL
-###     Minimum log level to log
+###     Lowest log level to output
 ###     Default: notice
 : ${MSC_LOG_LEVEL:=notice}
+###
 ### MSC_LOG_PREFIX
 ###     Prefix string to add to each log message.
 ###     Default: (empty)
@@ -28,6 +34,11 @@
 ###      
 ###     Default: -s (print to stderr)
 : ${MSC_LOG_OPTIONS:="-s"}
+###
+### MSC_LOG_STDERR
+###     Log show in stderr
+###     Default: 1 (Yes)
+: ${MSC_LOG_STDERR:=1}
 ###
 ### MSC_LOG_TAG
 ###     Marked the log with a specified tag in logger.

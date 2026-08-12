@@ -5,6 +5,7 @@ MSC_VERSION=3.0.0
 ### Log severity levels
 ###     Based on syslog(3) log levels
 ###     Lower value means higher severity
+###     If invokes other subroutine, it is caller to determine severity.
 ###
 ###  MSC_SEVERITY_EMERG  0
 ###      system is unusable, application must stop immediately.
@@ -51,6 +52,8 @@ MSC_SEVERITY_DEBUG2=9
 MSC_SEVERITY_NONE=20
 
 ### Return codes
+###     Simply the reason to return.
+###
 ###     0: Success
 ###     1-299: Standard POSIX error codes
 ###     300-499: Protocol MSC ID
@@ -690,38 +693,42 @@ export MscExitMessageDict
 ###      It is based on loglevel from syslog(3)
 declare -A MSC_LOG_LEVEL_DICT
 ###
-###      pending:
+###      none:
 ###          Initial level of outcome.
-MSC_LOG_LEVEL_DICT['pending']=0
+MSC_LOG_LEVEL_DICT['pending']=$MSC_SEVERITY_NONE
+###
+###      debug2:
+###          A little bit more verbose debug messages
+MSC_LOG_LEVEL_DICT['debug2']=$MSC_SEVERITY_DEBUG2
 ###
 ###      debug1:
 ###          A little bit more verbose debug messages
-MSC_LOG_LEVEL_DICT['debug1']=5
+MSC_LOG_LEVEL_DICT['debug1']=$MSC_SEVERITY_DEBUG1
 ###
 ###      debug:
 ###          Only useful when debugging
-MSC_LOG_LEVEL_DICT['debug']=6
+MSC_LOG_LEVEL_DICT['debug']=$MSC_SEVERITY_DEBUG
 ###
 ###      info:
 ###          User may be interested.
-MSC_LOG_LEVEL_DICT['info']=7
+MSC_LOG_LEVEL_DICT['info']=$MSC_SEVERITY_INFO
 ###
 ###      notice:
 ###          User needs to see.
-MSC_LOG_LEVEL_DICT['notice']=10
+MSC_LOG_LEVEL_DICT['notice']=$MSC_SEVERITY_NOTICE
 ###
 ###      warning:
 ###          The program may still return OK, but user need to be warned.
-MSC_LOG_LEVEL_DICT['warning']=$MSC_EXIT_WARNING
+MSC_LOG_LEVEL_DICT['warning']=$MSC_SEVERITY_WARNING
 ###
 ###      err:
 ###          Error that is not severe to stop the program.
 ###          From this level, error messages need to be shown.
-MSC_LOG_LEVEL_DICT['err']=$MSC_EXIT_ERR
+MSC_LOG_LEVEL_DICT['err']=$MSC_SEVERITY_ERR
 ###
 ###      crit:
 ###          The program should stop and return error immediately.
-MSC_LOG_LEVEL_DICT['crit']=$MSC_EXIT_CRIT
-MSC_LOG_LEVEL_DICT['alert']=$((MSC_EXIT_CRIT + 1))
-MSC_LOG_LEVEL_DICT['emerg']=$((MSC_EXIT_CRIT + 2))
+MSC_LOG_LEVEL_DICT['crit']=$MSC_SEVERITY_CRIT
+MSC_LOG_LEVEL_DICT['alert']=$MSC_SEVERITY_ALERT
+MSC_LOG_LEVEL_DICT['emerg']=$MSC_SEVERITY_EMERG
 export MSC_LOG_LEVEL_DICT

@@ -40,25 +40,17 @@ msc_array_get_value() {
   fi
 }
 
-###
-###  msc_log_emerg <msg> [logger options...]
-###    Log an emergency message and notify all users
-msg_log_emerg() {
-  local msg="$1"
-  shift
-  logger $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.emerg" "$@" "$MSC_LOG_PREFIX[EMERG] $msg"
-}
 
 ###
 ### msc_log <msg> [logLevel [logger options...]]
-###   Log messages with given level
+###   (Deprecated) Log messages with given level
 ###
 ###   Arguments:
 ###     msg: message to log
 ###     level: refer const.sh or syslog(3), default is info
 ###     logger-options: other option to pass to logger
 ###   Environments:
-###     MSG_LOG_TAG: Tag the log message
+###     MSC_LOG_TAG: Tag the log message
 msc_log() {
   local msg="$1"
   shift
@@ -73,36 +65,139 @@ msc_log() {
     logLevel=info
   fi
 
+  msc_log_write $logLevel "$msg" "$@"
+}
+
+###
+###  msc_log_debug <msg> [logger options...]
+###    Log a debug message
+msc_log_debug() {
+  local msg="$1"
+  shift
+  msc_log_write debug "$msg" "$@"
+}
+
+###
+###  msc_log_info <msg> [logger options...]
+###    Log an informational message
+msc_log_info() {
+  local msg="$1"
+  shift
+  msc_log_write info "$msg" "$@"
+}
+
+###
+###  msc_log_notice <msg> [logger options...]
+###    Log a notice message
+msc_log_notice() {
+  local msg="$1"
+  shift
+  msc_log_write notice "$msg" "$@"
+}
+
+###
+###  msc_log_warning <msg> [logger options...]
+###    Log a warning message
+msc_log_warning() {
+  local msg="$1"
+  shift
+  msc_log_write warning "$msg" "$@"
+}
+
+###
+###  msc_log_err <msg> [logger options...]
+###    Log an error message
+msc_log_err() {
+  local msg="$1"
+  shift
+  msc_log_write err "$msg" "$@"
+}
+
+###
+###  msc_log_crit <msg> [logger options...]
+###    Log a critical message
+msc_log_crit() {
+  local msg="$1"
+  shift
+  msc_log_write crit "$msg" "$@"
+}
+
+###
+###  msc_log_alert <msg> [logger options...]
+###    Log an alert message
+msc_log_alert() {
+  local msg="$1"
+  shift
+  msc_log_write alert "$msg" "$@"
+}
+
+###
+###  msc_log_emerg <msg> [logger options...]
+###    Log an emergency message and notify all users
+msc_log_emerg() {
+  local msg="$1"
+  shift
+  msc_log_write emerg "$msg" "$@"
+}
+
+###
+###  msc_log_level_set <logLevel>
+###    Set log level
+###    Valid value: emerg, alert, crit, err, warning, notice, info, debug 
+msc_log_level_set() {
+  case "$1" in
+    emerg|alert|crit|err|warning|notice|info|debug)
+      MSC_LOG_LEVEL=$1
+      ;;
+    *)
+      ;;
+  esac
+}
+
+###
+###  msc_log_level_to_display <logLevel>
+###    Show log level as display string
+###    Valid value: emerg, alert, crit, err, warning, notice, info, debug 
+msc_log_level_to_display() {
+  local logLevel="$1"
+  case "$logLevel" in
+    emerg|alert|crit|err)
+      echo "${logLevel^^}"
+      ;;
+    warning|notice)
+      echo "$logLevel^}"
+      ;;
+    info|debug)
+      echo "$logLevel"
+      ;;
+    *)
+      ;;
+  esac
+}
+
+###
+###  msc_log_write <logLevel> <msg>
+###    Function to actual write log
+###    Arguments:
+###      logLevel: refer const.sh or syslog(3).
+###      msg: message to log
+msc_log_write() {
+  local logLevel="${1,,}"
+  local msg="$2"
+  shift 2
+  local logOptions=""
+
   ## Omit the lower priority
   if [ $(msc_array_get_value MSC_LOG_LEVEL_DICT $logLevel) -lt $(msc_array_get_value MSC_LOG_LEVEL_DICT $MSC_LOG_LEVEL) ]; then
     return
   fi
 
-  case $logLevel in
-    emerg)
-      finalMsg+="[EMERG] $msg"
-      ;;
-    alert)
-      finalMsg+="[ALERT] $msg"
-      ;;
-    crit)
-      finalMsg+="[CRIT] $msg"
-      ;;
-    err)
-      finalMsg+="[ERR] $msg"
-      ;;
-    warning)
-      finalMsg+="[Warning] $msg"
-      ;;
-    notice)
-      finalMsg+="[notice] $msg"
-      ;;
-    *)
-      finalMsg+="$msg"
-      ;;
-  esac
-  logger $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$finalMsg"
+  if [[ (!-z ${MSC_LOG_STDERR:-} || $MSC_LOG_STDERR = "0" )]]; then
+    logOptions="-s"
+  fi
+  logger $logOptions $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$MSC_LOG_PREFIX[$(msg_log_level_to_display $logLevel)] $msg"
 }
+
 
 ###
 ### msc_exit_status_to_log_level <exitStatus>
