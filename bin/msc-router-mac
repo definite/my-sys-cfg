@@ -1,11 +1,27 @@
 #!/bin/bash
 set -eu
+### NAME
+###     msc-router-mac - Find the router MAC address
+###
+### SYNOPSIS
+###     msc-router-mac [target-ip]
+###
+### DESCRIPTION
+###     Find the MAC address of the router (gateway).
+###     Without arguments, returns the MAC of the default gateway.
+###     With target-ip, returns the MAC of the gateway used to reach that IP.
+###
+### ARGUMENTS
+###     target-ip: IP address of the target host.
+###         If specified, find the router between current host and target.
 MSC_LOG_PREFIX="[msc-router-mac]"
 
 ## Setup my-cfg-sys environment
 eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 trap msc_exit_print_error EXIT
-RouterIp=$($MSC_BIN_DIR/msc-router-ip)
+
+TargetIp="${1:-}"
+RouterIp=$($MSC_BIN_DIR/msc-router-ip ${TargetIp:+"$TargetIp"})
 
 if [ -z "${RouterIp}" ]; then
   MscExitMsg="No dev found that connect to router."

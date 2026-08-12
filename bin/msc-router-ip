@@ -1,8 +1,28 @@
 #!/bin/sh
 #set -eu
+### NAME
+###     msc-router-ip - Find the router IP
+###
+### SYNOPSIS
+###     msc-router-ip [target-ip]
+###
+### DESCRIPTION
+###     Find the router (gateway) IP address.
+###     Without arguments, returns the default gateway.
+###     With target-ip, returns the gateway used to reach that IP.
+###
+### ARGUMENTS
+###     target-ip: IP address of the target host.
+###         If specified, find the router between current host and target.
 
-RoutersLines=$(ip r | sed -rne '/^default/ s/^.* via ([^ ]+) dev ([^ ]+) .*$/\2 \1/p')
+TargetIp="${1:-}"
 
-## Heurstic Logic: sort the interface alphbatically,
-## wireless NIC will be the last
-sort <<<"$RoutersLines" | head -n 1 | sed -e "s/^[^ ]* //"
+if [ -n "$TargetIp" ]; then
+  ip route get "$TargetIp" 2>/dev/null | head -1 | sed -rne 's/^.* via ([^ ]+) .*$/\1/p'
+else
+  RoutersLines=$(ip r | sed -rne '/^default/ s/^.* via ([^ ]+) dev ([^ ]+) .*$/\2 \1/p')
+
+  ## Heurstic Logic: sort the interface alphbatically,
+  ## wireless NIC will be the last
+  sort <<<"$RoutersLines" | head -n 1 | sed -e "s/^[^ ]* //"
+fi

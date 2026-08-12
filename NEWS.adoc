@@ -10,3 +10,4 @@
 - Deprecate msc_log, use per-level msc_log_<level> functions instead
   (msc_log_debug, msc_log_info, msc_log_notice, msc_log_warning,
   msc_log_err, msc_log_crit, msc_log_alert, msc_log_emerg)
+- Deprecate msc-ssl-csr-new
