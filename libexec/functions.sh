@@ -165,7 +165,7 @@ msc_log_level_to_display() {
       echo "${logLevel^^}"
       ;;
     warning|notice)
-      echo "$logLevel^}"
+      echo "${logLevel^}"
       ;;
     info|debug)
       echo "$logLevel"
@@ -192,10 +192,10 @@ msc_log_write() {
     return
   fi
 
-  if [[ (!-z ${MSC_LOG_STDERR:-} || $MSC_LOG_STDERR = "0" )]]; then
+  if [[ ! -z "${MSC_LOG_STDERR:-}" && "$MSC_LOG_STDERR" != "0" ]]; then
     logOptions="-s"
   fi
-  logger $logOptions $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$MSC_LOG_PREFIX[$(msg_log_level_to_display $logLevel)] $msg"
+  logger $logOptions $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$MSC_LOG_PREFIX[$(msc_log_level_to_display $logLevel)] $msg"
 }
 
 
