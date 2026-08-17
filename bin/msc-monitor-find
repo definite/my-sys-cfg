@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu # Exit when returns non-zero, Error when variable is unset.
 ### NAME
-###     msc-monitor-find - Find the xrandr infomation, such as EDID
+###     msc-monitor-find - Find monitor information, such as EDID
 ###
 ### SYNOPSIS
 ###     msc-monitor-find [options] -D [Descriptor]
@@ -9,7 +9,9 @@ set -eu # Exit when returns non-zero, Error when variable is unset.
 ### DESCRIPTION
 ###     This program finds EDID descriptor of active monitors looking from:
 ###
-###         Non-empty edid file within /sys/class/drm/ or xrandr
+###         Non-empty edid file within /sys/class/drm/
+###
+###     Output names are resolved via xrandr (X11) or kscreen-doctor (Wayland).
 ###
 ### REQUIREMENTS
 ###     monitor-edid needs to be installed.
@@ -37,8 +39,8 @@ eval "$($(dirname $(realpath ${BASH_SOURCE[0]}))/msc-env-find -f)"
 
 ##== Functions
 declare -A EdidDrmMap
-declare -A EdidXrandrMap
-declare -A EdidXrandrPropMap
+declare -A EdidOutputMap
+declare -A EdidOutputPropMap
 declare -A EdidDescriptorMap
 
 BytePerLine=16
@@ -76,8 +78,27 @@ extract_xrandr_edid() {
     edidLine=$(msc_extract_section -c "^[[:blank:]]*[0-9a-f]+$" "[[:blank:]]*EDID:" <<<"$xrandrProp" |
       sed -rne '/^[[:blank:]]*[0-9a-f]+/p' |
       tr -d '[:space:]')
-    EdidXrandrMap["$edidLine"]=$out
-    EdidXrandrPropMap["$edidLine"]="$xrandrProp"
+    EdidOutputMap["$edidLine"]=$out
+    EdidOutputPropMap["$edidLine"]="$xrandrProp"
+  done
+}
+
+extract_kscreen_outputs() {
+  local kscreenAll
+  kscreenAll=$(kscreen-doctor -o 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g')
+  if [ -z "$kscreenAll" ]; then
+    return
+  fi
+
+  for edidLine in "${!EdidDrmMap[@]}"; do
+    local connector="${EdidDrmMap[$edidLine]}"
+    local outputName="${connector#card*-}"
+    local outputBlock
+    outputBlock=$(msc_extract_section -1 "Output:.*[[:space:]]${outputName}[[:space:]]" <<<"$kscreenAll")
+    if [ -n "$outputBlock" ]; then
+      EdidOutputMap["$edidLine"]=$outputName
+      EdidOutputPropMap["$edidLine"]=$(tail -n +2 <<<"$outputBlock")
+    fi
   done
 }
 
@@ -155,7 +176,7 @@ while getopts 'hC:cD:elO:optV:' opt; do
       FilterOutput=$OPTARG
       ;;
     o)
-      ###     -o: Show XRandr Output
+      ###     -o: Show output name (xrandr on X11, kscreen on Wayland)
       DisplayMode=${MODE[XRANDR_OUTPUT]}
       ;;
     p)
@@ -190,6 +211,9 @@ case $XDG_SESSION_TYPE in
     SessionType=x11
     ;;
   wayland)
+    if command -v kscreen-doctor &>/dev/null; then
+      extract_kscreen_outputs
+    fi
     SessionType=wayland
     ;;
   *)
@@ -207,12 +231,12 @@ for edidLine in "${!EdidDrmMap[@]}"; do
     continue
   fi
 
-  if [ -n "$FilterExternal" -a $connector = "card0-eDP-1" ]; then
+  if [ -n "$FilterExternal" ] && [[ $connector == card*-eDP-* ]]; then
     continue
   fi
 
-  if [ $SessionType = x11 ]; then
-    output=${EdidXrandrMap[$edidLine]}
+  if [ -n "${EdidOutputMap[$edidLine]+x}" ]; then
+    output=${EdidOutputMap[$edidLine]}
     if [ -n "$FilterOutput" -a "$FilterOutput" != "$output" ]; then
       continue
     fi
@@ -249,10 +273,10 @@ for edidLine in "${!EdidDrmMap[@]}"; do
       ;;
 
     ${MODE[XRANDR_OUTPUT]})
-      if [ $SessionType = x11 ]; then
-        echo $output
+      if [ -n "${EdidOutputMap[$edidLine]+x}" ]; then
+        echo "${EdidOutputMap[$edidLine]}"
       else
-        msc_fail "Section Type $SessionType does not support XRandr" $MSC_EXIT_CRIT
+        msc_fail "Session Type $SessionType does not support output listing" $MSC_EXIT_CRIT
       fi
       ;;
 
@@ -264,7 +288,9 @@ for edidLine in "${!EdidDrmMap[@]}"; do
     *)
       print_section_header
       echo "$edidTxt"
-      echo "${EdidXrandrPropMap[$edidLine]}"
+      if [ -n "${EdidOutputPropMap[$edidLine]+x}" ]; then
+        echo "${EdidOutputPropMap[$edidLine]}"
+      fi
       ;;
 
     esac
