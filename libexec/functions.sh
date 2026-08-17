@@ -185,17 +185,40 @@ msc_log_write() {
   local logLevel=$(tr '[:upper:]' '[:lower:]' <<<"$1")
   local msg="$2"
   shift 2
-  local logOptions=""
 
-  ## Omit the lower priority
-  if [ $(msc_array_get_value MSC_LOG_LEVEL_DICT $logLevel) -lt $(msc_array_get_value MSC_LOG_LEVEL_DICT $MSC_LOG_LEVEL) ]; then
+  ## Omit less severe messages (lower number = higher severity)
+  if [ $(msc_array_get_value MSC_LOG_LEVEL_DICT $logLevel) -gt $(msc_array_get_value MSC_LOG_LEVEL_DICT $MSC_LOG_LEVEL) ]; then
     return
   fi
 
-  if [[ ! -z "${MSC_LOG_STDERR:-}" && "$MSC_LOG_STDERR" != "0" ]]; then
-    logOptions="-s"
+  local displayMsg="$MSC_LOG_PREFIX[$(msc_log_level_to_display $logLevel)] $msg"
+
+  ## Log to syslog
+  logger $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$displayMsg"
+
+  ## Log to stderr with coloring for crit+
+  if [[ -n "${MSC_LOG_STDERR:-}" && "$MSC_LOG_STDERR" != "0" ]]; then
+    case $logLevel in
+      crit|alert|emerg)
+        printf '\e[41;97m%s\e[0m\n' "$displayMsg" >&2
+        ;;
+      err)
+        printf '\e[31m%s\e[0m\n' "$displayMsg" >&2
+        ;;
+      warning)
+        printf '\e[33m%s\e[0m\n' "$displayMsg" >&2
+        ;;
+      notice)
+        printf '\e[34m%s\e[0m\n' "$displayMsg" >&2
+        ;;
+      info)
+        printf '\e[36m%s\e[0m\n' "$displayMsg" >&2
+        ;;
+      *)
+        echo "$displayMsg" >&2
+        ;;
+    esac
   fi
-  logger $logOptions $MSC_LOG_OPTIONS ${MSC_LOG_TAG:+-t $MSC_LOG_TAG} -p "$MSC_LOG_FACILITY.$logLevel" "$@" "$MSC_LOG_PREFIX[$(msc_log_level_to_display $logLevel)] $msg"
 }
 
 

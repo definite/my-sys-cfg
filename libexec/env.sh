@@ -29,11 +29,11 @@
 : ${MSC_LOG_PREFIX:=}
 ###
 ### MSC_LOG_OPTIONS
-###     Options for logger. 
+###     Extra options for logger.
 ###     If it has '-t <tag>' option, it takes precedence over MSC_LOG_TAG.
-###      
-###     Default: -s (print to stderr)
-: ${MSC_LOG_OPTIONS:="-s"}
+###
+###     Default: (empty). Stderr output is controlled by MSC_LOG_STDERR.
+: ${MSC_LOG_OPTIONS:=}
 ###
 ### MSC_LOG_STDERR
 ###     Log show in stderr
