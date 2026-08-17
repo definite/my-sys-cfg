@@ -162,10 +162,10 @@ msc_log_level_to_display() {
   local logLevel="$1"
   case "$logLevel" in
     emerg|alert|crit|err)
-      echo "${logLevel^^}"
+      echo "$logLevel" | tr '[:lower:]' '[:upper:]'
       ;;
     warning|notice)
-      echo "${logLevel^}"
+      echo "$(tr '[:lower:]' '[:upper:]' <<<"${logLevel:0:1}")${logLevel:1}"
       ;;
     info|debug)
       echo "$logLevel"
@@ -182,7 +182,7 @@ msc_log_level_to_display() {
 ###      logLevel: refer const.sh or syslog(3).
 ###      msg: message to log
 msc_log_write() {
-  local logLevel="${1,,}"
+  local logLevel=$(tr '[:upper:]' '[:lower:]' <<<"$1")
   local msg="$2"
   shift 2
   local logOptions=""
