@@ -8,7 +8,7 @@
 ###
 ### DESCRIPTION
 ###     Setup host according to host-setup directory.
-###     
+###
 ###     Under the host-setup directory, the structure looks like
 ###     + common
 ###     | + etc
@@ -23,7 +23,7 @@
 ###
 ###     The setting files that applied to all hosts are under common/;
 ###     and the host specific files are under host.d/<hostname>/
-###       
+###
 ### ARGUMENTS
 ###     hostname: Name of the host.
 ###  
@@ -69,19 +69,27 @@ MSC_LOG_LEVEL=notice
 Mode=
 Sudo=
 Target=
-## 
+Action=
+Force=
+NoRestorecon=
+##
 Hostname=$(hostname -s)
 ## PerformedActionArray
 ##   It is possible that some files only exist in either common or host specific.
 ##   Showing the success one on notice level won't make users think why it failed.
 declare -a PerformedActionArray
 
-while getopts 'hst:v:' opt; do
+while getopts 'hist:v:fZCd' opt; do
   case $opt in
     h)
       ###     -h: Print usage
       msc_help_print $0
       exit $MSC_EXIT_OK
+      ;;
+    i)
+      ###
+      ###     -i: Install to target
+      Action=install
       ;;
     s)
       ###
@@ -90,30 +98,66 @@ while getopts 'hst:v:' opt; do
       ;;
     t)
       ###
-      ###     -t <path>: Update target path 
+      ###     -t <path>: Update target path
       ###       For example, -t /etc/my-sys-cfg copies corresponding host-setup files to /etc/my-sys-cfg.
       Target="$OPTARG"
       ;;
     v)
       ###
       ###     -v <level>: Log level
-      ###        Available: debug1, debug, info, notice: 
+      ###        Available: debug1, debug, info, notice:
       ###          err, crit, alert, emerg
       ###        Default: notice
       MSC_LOG_LEVEL=$OPTARG
+      ;;
+    f)
+      ###
+      ###     -f: Force overwrite existing files
+      Force=1
+      ;;
+    Z)
+      ###
+      ###     -Z: Skip SELinux restorecon (restorecon is applied by default)
+      NoRestorecon=1
+      ;;
+    C)
+      ###
+      ###     -C: Copy target files back to source
+      Action=copy-to-source
+      ;;
+    d)
+      ###
+      ###     -d: Show diff between source and target
+      Action=diff
       ;;
   esac
 done
 
 shift $((OPTIND - 1))
 
+if [[ -z $Action ]]; then
+  msc_help_print $0
+  exit $MSC_EXIT_OK
+fi
+
+Subcommand=$Action
+if [[ $Action == "install" ]]; then
+  if [[ -n $Force ]] && [[ -z $NoRestorecon ]]; then
+    Subcommand=se-install-force
+  elif [[ -n $Force ]]; then
+    Subcommand=install-force
+  elif [[ -z $NoRestorecon ]]; then
+    Subcommand=se-install
+  fi
+fi
+
 if [[ -n "${1-}" ]]; then
-  Hostname="$1" 
+  Hostname="$1"
   shift
 fi
 
-msc_log "Host setup directory=$MSC_HOST_SETUP_DIR" info 
-msc_log "LogLevel=$MSC_LOG_LEVEL Sudo=$Sudo" debug 
+msc_log "Host setup directory=$MSC_HOST_SETUP_DIR" info
+msc_log "Subcommand=$Subcommand LogLevel=$MSC_LOG_LEVEL Sudo=$Sudo" debug
 ## }}}
 ## Main {{{
 
@@ -123,32 +167,69 @@ for p in $MSC_HOST_SETUP_DIR/common/$Target $MSC_HOST_SETUP_DIR/hosts.d/$Hostnam
     continue
   fi
   if [[ -f $p ]]; then
-    Action="$Sudo cp $p $Target"
-    msc_log " $Action" debug 
-    eval "$Action"
-    restorecon -v "$Target"
-    PerformedActionArray+=( "$Action" )
+    case $Subcommand in
+      install|install-force|se-install|se-install-force)
+        Cmd="$Sudo cp $p $Target"
+        msc_log " $Cmd" debug
+        eval "$Cmd"
+        PerformedActionArray+=( "$Cmd" )
+        ;;
+      restorecon)
+        restorecon -v "$Target"
+        ;;
+      copy-to-source)
+        Cmd="cp $Target $p"
+        msc_log " $Cmd" debug
+        eval "$Cmd"
+        PerformedActionArray+=( "$Cmd" )
+        ;;
+      diff)
+        diff "$p" "$Target" || true
+        ;;
+    esac
+    case $Subcommand in
+      se-install|se-install-force)
+        restorecon -v "$Target"
+        ;;
+    esac
     continue
   fi
   Mode="$(get_mode $p)"
   msc_log " path=$p mode=$Mode" debug
 
   if [[ -z $Mode ]]; then
-    msc_log " no host-setup files found in directory $d" warning
+    msc_log " no host-setup files found in directory $p" warning
     continue
   fi
 
   cd $p
   case $Mode in
-    sh )
-      msc_log " running " info
-      $Sudo ./msc-setup.sh
+    sh)
+      msc_log " running msc-setup.sh $Subcommand" info
+      $Sudo ./msc-setup.sh $Subcommand
       ;;
-    make )
-      $Sudo make install
+    make)
+      $Sudo make $Subcommand
       ;;
-    cp )
-      $Sudo cp -Rv * .
+    cp)
+      case $Subcommand in
+        install|se-install)
+          $Sudo cp -Rv * .
+          ;;
+        install-force|se-install-force)
+          $Sudo cp -Rvf * .
+          ;;
+        *)
+          msc_log " subcommand $Subcommand not supported for cp mode" warning
+          ;;
+      esac
+      case $Subcommand in
+        se-install|se-install-force|restorecon)
+          if command -v restorecon &>/dev/null; then
+            restorecon -Rv .
+          fi
+          ;;
+      esac
       ;;
   esac
   cd -
